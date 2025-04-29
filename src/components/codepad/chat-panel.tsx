@@ -49,21 +49,22 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
 
 
   return (
-    <div className="flex flex-col h-full bg-card text-card-foreground border-l border-border">
-       {/* Header with optional close button */}
+    <div className="flex flex-col h-full bg-card text-card-foreground border-t border-border md:border-l md:border-t-0"> {/* Added top border for bottom sheet */}
+       {/* Header */}
        <div className="p-4 border-b border-border flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
              <Sparkles className="h-5 w-5 text-primary" />
              <h2 className="text-lg font-semibold">AI Assistant</h2>
           </div>
-           {isMobile && (
+           {/* Mobile close button is handled by SheetContent by default */}
+           {/* {isMobile && (
                <SheetClose asChild>
                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
                    <X className="h-4 w-4" />
                    <span className="sr-only">Close Chat</span>
                  </Button>
                </SheetClose>
-            )}
+            )} */}
        </div>
       <ScrollArea className="flex-grow p-4 output-panel" ref={scrollAreaRef}>
         <div className="space-y-4">
@@ -136,4 +137,3 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
     </div>
   );
 }
-

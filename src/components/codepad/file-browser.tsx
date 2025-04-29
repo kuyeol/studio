@@ -51,7 +51,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
 
 
   return (
-    <div className="flex flex-col h-full bg-card text-card-foreground border-r border-border">
+    <div className="flex flex-col h-full bg-card text-card-foreground border-t border-border md:border-r md:border-t-0"> {/* Added top border for bottom sheet */}
       <div className="p-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
            <Folder className="h-5 w-5 text-primary" />
@@ -62,15 +62,15 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                <span className="sr-only">Refresh Files</span>
              </Button>
-              {/* Show close button only on mobile inside the sheet */}
-             {isMobile && (
+              {/* Show close button only on mobile inside the sheet (relies on SheetContent's default close button) */}
+             {/* {isMobile && ( // Removed explicit close button here as SheetContent provides one
                <SheetClose asChild>
                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
                    <X className="h-4 w-4" />
                    <span className="sr-only">Close File Browser</span>
                  </Button>
                </SheetClose>
-             )}
+             )} */}
          </div>
       </div>
       <ScrollArea className="flex-grow p-2 output-panel"> {/* Reuse output-panel scrollbar style */}
@@ -118,4 +118,3 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
     </div>
   );
 }
-

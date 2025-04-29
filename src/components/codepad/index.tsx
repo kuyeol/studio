@@ -12,7 +12,7 @@ import OutputPanel from "./output-panel";
 import ChatPanel from "./chat-panel";
 import FileBrowser from "./file-browser"; // Import FileBrowser
 import { Button } from "@/components/ui/button";
-import { Play, Trash2, MessageSquare, Save, Loader2, File as FileIcon, PanelLeft, X, Menu } from "lucide-react"; // Add Save, Loader2, FileIcon, PanelLeft, X, Menu
+import { Play, Trash2, MessageSquare, Save, Loader2, File as FileIcon, PanelLeft, X, Menu, PanelBottom } from "lucide-react"; // Add Save, Loader2, FileIcon, PanelLeft, X, Menu, PanelBottom
 import { chat, type Message, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { useToast } from "@/hooks/use-toast";
 import { readFile, saveFile } from "@/services/file-api"; // Import file API functions
@@ -234,11 +234,11 @@ export default function CodePad() {
                <Sheet open={isFileSheetOpen} onOpenChange={setIsFileSheetOpen}>
                 <SheetTrigger asChild>
                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                     <PanelLeft className="h-5 w-5" />
+                     <PanelBottom className="h-5 w-5" /> {/* Changed Icon */}
                      <span className="sr-only">Open File Browser</span>
                    </Button>
                  </SheetTrigger>
-                 <SheetContent side="left" className="w-3/4 sm:w-1/2 p-0">
+                 <SheetContent side="bottom" className="w-full h-2/3 p-0"> {/* Changed side, width, height */}
                    <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
                  </SheetContent>
                </Sheet>
@@ -298,6 +298,7 @@ export default function CodePad() {
                      <Trash2 className="mr-2 h-4 w-4" />
                      Clear Output
                    </DropdownMenuItem>
+                   {/* Trigger for Chat Sheet */}
                    <DropdownMenuItem onSelect={() => setIsChatSheetOpen(true)}>
                        <MessageSquare className="mr-2 h-4 w-4" />
                        Chat with AI
@@ -351,10 +352,10 @@ export default function CodePad() {
       {/* Main Layout */}
        {isMobile ? renderMobileLayout() : renderDesktopLayout()}
 
-        {/* Mobile Chat Sheet */}
+        {/* Mobile Chat Sheet - Changed side and height */}
         {isMobile && (
             <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
-                 <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+                 <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col"> {/* Changed side and height */}
                      <ChatPanel
                         messages={messages}
                         onSendMessage={handleSendMessage}
