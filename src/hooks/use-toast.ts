@@ -1,3 +1,4 @@
+
 "use client"
 
 // Inspired by react-hot-toast library
@@ -9,7 +10,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000 // Changed from 1000000 to 5000 (5 seconds)
 
 type ToasterToast = ToastProps & {
   id: string
@@ -77,10 +78,22 @@ const addToRemoveQueue = (toastId: string) => {
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      }
+      // Immediately dismiss any existing toasts before adding a new one
+      state.toasts.forEach((toast) => {
+         addToRemoveQueue(toast.id); // Ensure old toasts get removed eventually
+         if (toastTimeouts.has(toast.id)) {
+             clearTimeout(toastTimeouts.get(toast.id)!); // Clear existing removal timeout
+             toastTimeouts.delete(toast.id);
+         }
+      });
+      // Trigger immediate removal of existing toasts from the UI
+       const newState = {
+         ...state,
+         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT).map(t => ({ ...t, open: t.id === action.toast.id })), // Only new one is open
+       };
+       addToRemoveQueue(action.toast.id); // Add the new toast to the removal queue
+       return newState;
+
 
     case "UPDATE_TOAST":
       return {
