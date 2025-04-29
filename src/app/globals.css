@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -48,16 +49,16 @@ body {
   body {
     --background: 0 0% 20%; /* Dark Gray (#333333) */
     --foreground: 0 0% 98%; /* Almost White */
-    --card: 0 0% 94.1%; /* Light Gray (#f0f0f0) - Output Panel */
-    --card-foreground: 0 0% 3.9%; /* Dark Gray */
+    --card: 0 0% 14.9%; /* Darker Gray for Chat Panel Background */
+    --card-foreground: 0 0% 98%; /* Almost White for Chat Text */
     --popover: 0 0% 20%; /* Dark Gray */
     --popover-foreground: 0 0% 98%; /* Almost White */
     --primary: 180 100% 25.1%; /* Teal (#008080) */
     --primary-foreground: 0 0% 98%; /* Almost White */
     --secondary: 0 0% 14.9%; /* Slightly Lighter Dark Gray */
     --secondary-foreground: 0 0% 98%; /* Almost White */
-    --muted: 0 0% 14.9%; /* Slightly Lighter Dark Gray */
-    --muted-foreground: 0 0% 63.9%; /* Lighter Gray */
+    --muted: 0 0% 24.9%; /* Slightly lighter than card for muted elements like AI response bg */
+    --muted-foreground: 0 0% 80%; /* Lighter Gray for muted text */
     --accent: 180 100% 25.1%; /* Teal (#008080) */
     --accent-foreground: 0 0% 98%; /* Almost White */
     --destructive: 0 62.8% 40.6%; /* Darker Red */
@@ -230,21 +231,22 @@ pre[class*="language-"] {
   background: hsl(var(--accent) / 0.8);
 }
 
+/* Consistent scrollbar for Output and Chat Panels */
 .output-panel ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .output-panel ::-webkit-scrollbar-track {
-   background: hsl(var(--card) / 0.5);
+   background: hsl(var(--card) / 0.5); /* Use card background for track */
    border-radius: 10px;
 }
 
 .output-panel ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--muted-foreground) / 0.7); /* Use muted-foreground */
     border-radius: 10px;
 }
 
 .output-panel ::-webkit-scrollbar-thumb:hover {
-   background: hsl(var(--muted-foreground) / 0.8);
+   background: hsl(var(--muted-foreground)); /* Darker on hover */
 }
