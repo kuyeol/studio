@@ -2,13 +2,15 @@
 "use client";
 
 import * as React from "react";
-import { Send, User, Bot, Loader2, Sparkles } from "lucide-react";
+import { Send, User, Bot, Loader2, Sparkles, X } from "lucide-react"; // Add X
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Message } from "@/ai/flows/chat-flow"; // Import the Message type
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
+import { SheetClose } from "@/components/ui/sheet"; // Import SheetClose
 
 interface ChatPanelProps {
   messages: Message[];
@@ -19,6 +21,7 @@ interface ChatPanelProps {
 export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPanelProps) {
   const [inputMessage, setInputMessage] = React.useState("");
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile(); // Check if mobile
 
   const handleSend = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -47,9 +50,20 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
 
   return (
     <div className="flex flex-col h-full bg-card text-card-foreground border-l border-border">
-       <div className="p-4 border-b border-border flex items-center gap-2">
-         <Sparkles className="h-5 w-5 text-primary" />
-         <h2 className="text-lg font-semibold">AI Assistant</h2>
+       {/* Header with optional close button */}
+       <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+             <Sparkles className="h-5 w-5 text-primary" />
+             <h2 className="text-lg font-semibold">AI Assistant</h2>
+          </div>
+           {isMobile && (
+               <SheetClose asChild>
+                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                   <X className="h-4 w-4" />
+                   <span className="sr-only">Close Chat</span>
+                 </Button>
+               </SheetClose>
+            )}
        </div>
       <ScrollArea className="flex-grow p-4 output-panel" ref={scrollAreaRef}>
         <div className="space-y-4">
@@ -122,3 +136,4 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
     </div>
   );
 }
+

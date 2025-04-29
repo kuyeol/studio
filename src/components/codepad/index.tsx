@@ -12,10 +12,27 @@ import OutputPanel from "./output-panel";
 import ChatPanel from "./chat-panel";
 import FileBrowser from "./file-browser"; // Import FileBrowser
 import { Button } from "@/components/ui/button";
-import { Play, Trash2, MessageSquare, Save, Loader2, File as FileIcon } from "lucide-react"; // Add Save, Loader2, FileIcon
+import { Play, Trash2, MessageSquare, Save, Loader2, File as FileIcon, PanelLeft, X, Menu } from "lucide-react"; // Add Save, Loader2, FileIcon, PanelLeft, X, Menu
 import { chat, type Message, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { useToast } from "@/hooks/use-toast";
 import { readFile, saveFile } from "@/services/file-api"; // Import file API functions
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile hook
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
 
 export default function CodePad() {
   const [code, setCode] = React.useState<string>("// Select a file or start coding!");
@@ -26,10 +43,15 @@ export default function CodePad() {
   const [isSavingFile, setIsSavingFile] = React.useState(false);
 
   // State for Chat
-  const [isChatPanelOpen, setIsChatPanelOpen] = React.useState(true);
+  const [isDesktopChatPanelOpen, setIsDesktopChatPanelOpen] = React.useState(true); // Renamed for clarity
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = React.useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile(); // Use the hook
+
+  // State for mobile sheets
+  const [isFileSheetOpen, setIsFileSheetOpen] = React.useState(false);
+  const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false);
 
   // Dummy execution function - replace with actual backend call
   const executeCode = async () => {
@@ -61,8 +83,8 @@ export default function CodePad() {
     setOutput([]);
   };
 
-  const toggleChatPanel = () => {
-    setIsChatPanelOpen(!isChatPanelOpen);
+  const toggleDesktopChatPanel = () => {
+    setIsDesktopChatPanelOpen(!isDesktopChatPanelOpen);
   };
 
   // Function to handle selecting a file
@@ -71,6 +93,7 @@ export default function CodePad() {
     setIsLoadingFile(true);
     setSelectedFile(fileName);
     setCode(`// Loading ${fileName}...`);
+    setIsFileSheetOpen(false); // Close sheet on selection (mobile)
     try {
       const content = await readFile(fileName);
       setCode(content);
@@ -152,105 +175,194 @@ export default function CodePad() {
     }
   };
 
+  const renderDesktopLayout = () => (
+     <ResizablePanelGroup direction="horizontal" className="flex-grow rounded-lg">
+        {/* Left Side: File Browser */}
+         <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+              <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
+         </ResizablePanel>
+         <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
+
+       {/* Center: Editor and Output */}
+       <ResizablePanel defaultSize={isDesktopChatPanelOpen ? 50 : 80}>
+          <ResizablePanelGroup direction="vertical" className="flex-grow">
+            <ResizablePanel defaultSize={60} minSize={20}>
+              <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
+            </ResizablePanel>
+            <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
+            <ResizablePanel defaultSize={40} minSize={10}>
+              <OutputPanel output={output} />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+       </ResizablePanel>
+
+       {/* Optional Right Side: Chat Panel */}
+       {isDesktopChatPanelOpen && (
+         <>
+           <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
+           <ResizablePanel defaultSize={30} minSize={15} maxSize={50}>
+             <ChatPanel
+               messages={messages}
+               onSendMessage={handleSendMessage}
+               isLoading={isChatLoading}
+             />
+           </ResizablePanel>
+         </>
+       )}
+     </ResizablePanelGroup>
+  );
+
+  const renderMobileLayout = () => (
+    <div className="flex-grow flex flex-col">
+      {/* Editor takes most space */}
+      <div className="flex-grow-[6] min-h-0">
+          <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
+      </div>
+      {/* Output panel below */}
+      <div className="flex-grow-[4] min-h-0 border-t border-border">
+          <OutputPanel output={output} />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
-       <header className="flex items-center justify-between p-2 border-b border-border">
-          {/* Left Side: Current File Indicator */}
-         <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
-            {isLoadingFile ? (
-                <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading...</span>
-                </>
-            ) : selectedFile ? (
-                <>
-                    <FileIcon className="h-4 w-4" />
-                    <span className="font-medium text-foreground truncate" title={selectedFile}>{selectedFile}</span>
-                </>
-            ) : (
-                 <span>No file selected</span>
-            )}
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+       <header className="flex items-center justify-between p-2 border-b border-border flex-shrink-0">
+         {/* Left Side: Mobile File Trigger / Desktop File Indicator */}
+         <div className="flex items-center gap-2 text-sm min-w-0">
+            {isMobile ? (
+               <Sheet open={isFileSheetOpen} onOpenChange={setIsFileSheetOpen}>
+                <SheetTrigger asChild>
+                   <Button variant="ghost" size="icon" className="h-8 w-8">
+                     <PanelLeft className="h-5 w-5" />
+                     <span className="sr-only">Open File Browser</span>
+                   </Button>
+                 </SheetTrigger>
+                 <SheetContent side="left" className="w-3/4 sm:w-1/2 p-0">
+                   <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
+                 </SheetContent>
+               </Sheet>
+            ) : null}
+            {/* Current File Indicator (Desktop & Mobile) */}
+             <div className={cn("flex items-center gap-1 text-muted-foreground", isMobile && "flex-1")}>
+                 {isLoadingFile ? (
+                    <>
+                        <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                        <span className="truncate">Loading...</span>
+                    </>
+                ) : selectedFile ? (
+                    <>
+                        <FileIcon className="h-4 w-4 flex-shrink-0" />
+                        <span className="font-medium text-foreground truncate" title={selectedFile}>{selectedFile}</span>
+                    </>
+                ) : (
+                     <span className="truncate">No file selected</span>
+                )}
+             </div>
          </div>
 
          {/* Right Side: Action Buttons */}
-         <div className="flex items-center">
-            <Button
-             onClick={handleSaveFile}
-             disabled={!selectedFile || isSavingFile || isLoadingFile}
-             variant="ghost"
-             size="sm"
-             className="text-accent hover:bg-accent/10 hover:text-accent mr-2"
-            >
-             {isSavingFile ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                 <Save className="mr-2 h-4 w-4" />
-             )}
-             {isSavingFile ? "Saving..." : "Save"}
-            </Button>
-            <Button
-             onClick={executeCode}
-             disabled={isRunning || isLoadingFile || isSavingFile}
-             variant="ghost"
-             size="sm"
-             className="text-accent hover:bg-accent/10 hover:text-accent mr-2"
-            >
-              {isRunning ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                 <Play className="mr-2 h-4 w-4" />
-             )}
-             {isRunning ? "Running..." : "Run"}
-           </Button>
-           <Button onClick={clearOutput} variant="ghost" size="sm" className="text-muted-foreground hover:bg-muted/10 hover:text-muted-foreground mr-2">
-             <Trash2 className="mr-2 h-4 w-4" />
-             Clear Output
-           </Button>
-            <Button onClick={toggleChatPanel} variant="ghost" size="sm" className={`mr-2 ${isChatPanelOpen ? 'text-accent hover:bg-accent/10' : 'text-muted-foreground hover:bg-muted/10'}`}>
-             <MessageSquare className="mr-2 h-4 w-4" />
-             Chat
-           </Button>
+         <div className="flex items-center gap-1">
+            {isMobile ? (
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <Button variant="ghost" size="icon" className="h-8 w-8">
+                     <Menu className="h-5 w-5" />
+                     <span className="sr-only">More actions</span>
+                   </Button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end">
+                   <DropdownMenuItem
+                     onClick={handleSaveFile}
+                     disabled={!selectedFile || isSavingFile || isLoadingFile}
+                   >
+                     {isSavingFile ? (
+                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     ) : (
+                       <Save className="mr-2 h-4 w-4" />
+                     )}
+                     {isSavingFile ? "Saving..." : "Save"}
+                   </DropdownMenuItem>
+                   <DropdownMenuItem
+                     onClick={executeCode}
+                     disabled={isRunning || isLoadingFile || isSavingFile}
+                   >
+                     {isRunning ? (
+                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     ) : (
+                       <Play className="mr-2 h-4 w-4" />
+                     )}
+                     {isRunning ? "Running..." : "Run"}
+                   </DropdownMenuItem>
+                   <DropdownMenuItem onClick={clearOutput}>
+                     <Trash2 className="mr-2 h-4 w-4" />
+                     Clear Output
+                   </DropdownMenuItem>
+                   <DropdownMenuItem onSelect={() => setIsChatSheetOpen(true)}>
+                       <MessageSquare className="mr-2 h-4 w-4" />
+                       Chat with AI
+                   </DropdownMenuItem>
+                 </DropdownMenuContent>
+               </DropdownMenu>
+
+            ) : (
+               <>
+                  <Button
+                   onClick={handleSaveFile}
+                   disabled={!selectedFile || isSavingFile || isLoadingFile}
+                   variant="ghost"
+                   size="sm"
+                   className="text-accent hover:bg-accent/10 hover:text-accent"
+                  >
+                   {isSavingFile ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                   ) : (
+                       <Save className="mr-2 h-4 w-4" />
+                   )}
+                   {isSavingFile ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                   onClick={executeCode}
+                   disabled={isRunning || isLoadingFile || isSavingFile}
+                   variant="ghost"
+                   size="sm"
+                   className="text-accent hover:bg-accent/10 hover:text-accent"
+                  >
+                    {isRunning ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                   ) : (
+                       <Play className="mr-2 h-4 w-4" />
+                   )}
+                   {isRunning ? "Running..." : "Run"}
+                 </Button>
+                 <Button onClick={clearOutput} variant="ghost" size="sm" className="text-muted-foreground hover:bg-muted/10 hover:text-muted-foreground">
+                   <Trash2 className="mr-2 h-4 w-4" />
+                   Clear Output
+                 </Button>
+                  <Button onClick={toggleDesktopChatPanel} variant="ghost" size="sm" className={` ${isDesktopChatPanelOpen ? 'text-accent hover:bg-accent/10' : 'text-muted-foreground hover:bg-muted/10'}`}>
+                   <MessageSquare className="mr-2 h-4 w-4" />
+                   Chat
+                 </Button>
+               </>
+            )}
          </div>
        </header>
 
-      {/* Main Resizable Layout */}
-       <ResizablePanelGroup direction="horizontal" className="flex-grow rounded-lg">
+      {/* Main Layout */}
+       {isMobile ? renderMobileLayout() : renderDesktopLayout()}
 
-          {/* Left Side: File Browser */}
-           <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-                <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
-           </ResizablePanel>
-           <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
-
-
-         {/* Center: Editor and Output */}
-         <ResizablePanel defaultSize={isChatPanelOpen ? 50 : 80}>
-            <ResizablePanelGroup direction="vertical" className="flex-grow">
-              <ResizablePanel defaultSize={60} minSize={20}>
-                <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
-              </ResizablePanel>
-              <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
-              <ResizablePanel defaultSize={40} minSize={10}>
-                <OutputPanel output={output} />
-              </ResizablePanel>
-            </ResizablePanelGroup>
-         </ResizablePanel>
-
-         {/* Optional Right Side: Chat Panel */}
-         {isChatPanelOpen && (
-           <>
-             <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
-             <ResizablePanel defaultSize={30} minSize={15} maxSize={50}>
-               <ChatPanel
-                 messages={messages}
-                 onSendMessage={handleSendMessage}
-                 isLoading={isChatLoading}
-               />
-             </ResizablePanel>
-           </>
-         )}
-       </ResizablePanelGroup>
+        {/* Mobile Chat Sheet */}
+        {isMobile && (
+            <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
+                 <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+                     <ChatPanel
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        isLoading={isChatLoading}
+                      />
+                 </SheetContent>
+            </Sheet>
+        )}
     </div>
   );
 }
