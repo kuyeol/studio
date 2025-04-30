@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -21,8 +22,10 @@ interface FileBrowserProps {
 // Helper Component for Wrapping Button with SheetClose on Mobile
 const FileButtonWrapper = ({ children, isMobile, ...props }: { children: React.ReactNode, isMobile: boolean, [key: string]: any }) => {
   if (isMobile) {
-    return <SheetClose {...props}>{children}</SheetClose>;
+    // Use asChild to merge SheetClose's functionality onto the actual Button child
+    return <SheetClose asChild {...props}>{children}</SheetClose>;
   }
+  // For desktop, just render the children (the Button)
   return <>{children}</>;
 };
 
@@ -192,7 +195,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ): (
           <div className="space-y-1">
             {files.map((file) => (
-               <FileButtonWrapper key={file} isMobile={isMobile} >
+               <FileButtonWrapper key={file} isMobile={isMobile}>
                   <Button
                     variant="ghost"
                     size="sm"

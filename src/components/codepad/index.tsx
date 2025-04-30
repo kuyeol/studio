@@ -184,7 +184,6 @@ export default function CodePad() {
       setCode(`// Error loading ${fileName}\n// Please check the console for details.`);
       setPdfUrl(null); // Clear PDF URL on error
       setMarkdownContent(""); // Clear markdown content on error
-      setSelectedFile(null); // Reset selection on error
       setFileType('unknown'); // Reset file type
       toast({
         variant: "destructive",

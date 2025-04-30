@@ -33,10 +33,7 @@ export default function PdfViewer({ fileUrl }: PdfViewerProps) {
 
         // Configure pdfjs worker
         if (typeof window !== 'undefined') {
-          pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-            'pdfjs-dist/build/pdf.worker.min.mjs',
-            window.location.origin
-          ).toString();
+          pdfjs.GlobalWorkerOptions.workerSrc = `/build/pdf.worker.min.mjs`;
         }
         setPDFViewer({ pdfjs, Document, Page });
       } catch (err: any) {
