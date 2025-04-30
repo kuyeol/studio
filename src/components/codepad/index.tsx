@@ -24,13 +24,13 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetClose
-} from "@/components/ui/sheet";
+} from "@/components/ui/sheet"; // Import Sheet components
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"; // Import Dropdown components
 import { cn } from "@/lib/utils";
 
 
@@ -51,7 +51,7 @@ export default function CodePad() {
 
   // State for mobile sheets
   const [isFileSheetOpen, setIsFileSheetOpen] = React.useState(false);
-  const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false);
+  const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false); // State for mobile chat sheet
 
   // Dummy execution function - replace with actual backend call
   const executeCode = async () => {
@@ -145,13 +145,13 @@ export default function CodePad() {
     if (!userMessage.trim()) return;
 
     const newUserMessage: Message = { role: "user", content: userMessage };
-    setMessages((prevMessages) => [...prevMessages, newUserMessage]);
+    setMessages((prevMessages = []) => [...prevMessages, newUserMessage]); // Ensure prevMessages is an array
     setIsChatLoading(true);
 
     try {
       // Prepare input for the chat flow
       const chatInput: ChatInput = {
-        history: messages, // Pass the current history
+        history: messages || [], // Pass the current history, default to empty array
         message: userMessage,
       };
 
@@ -159,7 +159,7 @@ export default function CodePad() {
       const result: ChatOutput = await chat(chatInput);
 
       const aiResponseMessage: Message = { role: "model", content: result.response };
-      setMessages((prevMessages) => [...prevMessages, aiResponseMessage]);
+      setMessages((prevMessages = []) => [...prevMessages, aiResponseMessage]); // Ensure prevMessages is an array
 
     } catch (error) {
       console.error("Error calling chat flow:", error);
@@ -169,7 +169,7 @@ export default function CodePad() {
         description: "Could not get response from AI. Please try again.",
       });
       // Optionally remove the user message or add an error message to the chat
-       setMessages((prevMessages) => prevMessages.slice(0, -1)); // Remove user message on error
+       setMessages((prevMessages = []) => prevMessages.slice(0, -1)); // Ensure prevMessages is an array
     } finally {
       setIsChatLoading(false);
     }
@@ -202,7 +202,7 @@ export default function CodePad() {
            <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
            <ResizablePanel defaultSize={30} minSize={15} maxSize={50}>
              <ChatPanel
-               messages={messages}
+               messages={messages || []} // Pass messages or empty array
                onSendMessage={handleSendMessage}
                isLoading={isChatLoading}
              />
@@ -222,6 +222,7 @@ export default function CodePad() {
       <div className="flex-grow-[4] min-h-0 border-t border-border">
           <OutputPanel output={output} />
       </div>
+      {/* Chat panel is now rendered in a Sheet below */}
     </div>
   );
 
@@ -361,10 +362,10 @@ export default function CodePad() {
         {/* Mobile Chat Sheet - Changed side and height */}
         {isMobile && (
             <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
-                 {/* Ensure SheetContent has appropriate styling */}
+                 {/* SheetContent now renders the ChatPanel */}
                  <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col">
                      <ChatPanel
-                        messages={messages}
+                        messages={messages || []} // Pass messages or empty array
                         onSendMessage={handleSendMessage}
                         isLoading={isChatLoading}
                       />

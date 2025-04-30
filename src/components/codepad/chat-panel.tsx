@@ -13,12 +13,12 @@ import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 import { SheetClose } from "@/components/ui/sheet"; // Import SheetClose
 
 interface ChatPanelProps {
-  messages: Message[];
+  messages: Message[]; // Keep the type definition as Message[]
   onSendMessage: (message: string) => Promise<void>;
   isLoading: boolean;
 }
 
-export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPanelProps) {
+export default function ChatPanel({ messages = [], onSendMessage, isLoading }: ChatPanelProps) { // Default messages to []
   const [inputMessage, setInputMessage] = React.useState("");
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile(); // Check if mobile
@@ -50,19 +50,20 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
 
   return (
     // Use bg-secondary for the chat panel background for slight distinction
-    <div className="flex flex-col h-full bg-secondary text-secondary-foreground border-t border-border md:border-l md:border-t-0"> {/* Added top border for bottom sheet */}
-       {/* Header */}
-       <div className="p-4 border-b border-border flex items-center justify-between gap-2 bg-card text-card-foreground"> {/* Header remains card background */}
+    // Removed md:border-l md:border-t-0 as this is now self-contained for mobile sheets
+    <div className="flex flex-col h-full bg-secondary text-secondary-foreground border-t border-border"> {/* Added top border for bottom sheet */}
+       {/* Header - SheetClose is now outside if needed */}
+       <div className="p-4 border-b border-border flex items-center justify-between gap-2 bg-card text-card-foreground flex-shrink-0"> {/* Header remains card background */}
           <div className="flex items-center gap-2">
              <Sparkles className="h-5 w-5 text-primary" />
              <h2 className="text-lg font-semibold">AI Assistant</h2>
           </div>
-           {/* Mobile close button is handled by SheetContent by default */}
+           {/* Mobile close button is handled by SheetContent's default X */}
        </div>
       {/* ScrollArea uses output-panel style for scrollbar, content padding added here */}
       <ScrollArea className="flex-grow p-4 output-panel" ref={scrollAreaRef}>
         <div className="space-y-4">
-          {messages.map((msg, index) => (
+          {messages.map((msg, index) => ( // Now safe to map as messages defaults to []
             <div
               key={index}
               className={cn(
@@ -115,7 +116,7 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
         </div>
       </ScrollArea>
        {/* Input area uses card background */}
-      <div className="p-4 border-t border-border bg-card">
+      <div className="p-4 border-t border-border bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
           <Input
             placeholder="Ask the AI anything..."
