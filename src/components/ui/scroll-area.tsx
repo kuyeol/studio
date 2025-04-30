@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -5,12 +6,15 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
-const ScrollArea = React.forwardRef<
-  React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
+// Define the type for the forwarded ref
+type ScrollAreaElement = React.ElementRef<typeof ScrollAreaPrimitive.Root>;
+// Define the props type, including the ref
+type ScrollAreaProps = React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>;
+
+const ScrollArea = React.forwardRef<ScrollAreaElement, ScrollAreaProps>(
+  ({ className, children, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
-    ref={ref}
+    ref={ref} // Pass the ref to the underlying Radix component
     className={cn("relative overflow-hidden", className)}
     {...props}
   >

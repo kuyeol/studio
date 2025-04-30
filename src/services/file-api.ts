@@ -13,12 +13,13 @@ const samplePdfUrl = '/sample.pdf'; // Assumes sample.pdf is in the public folde
 
 // Placeholder file storage (simulating a simple backend)
 const mockFileSystem: Record<string, string> = {
-  "hello.java":"public",
+  "hello.java":"public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Java World!\");\n    }\n}",
   "welcome.js": "console.log('Welcome to CodePad!');\n\n// Try editing this file and saving.",
   "example.ts": "interface User {\n  name: string;\n  id: number;\n}\n\nconst user: User = { name: 'Demo User', id: 1 };\nconsole.log(user);",
   "styles.css": "body {\n  font-family: sans-serif;\n  background-color: #f0f0f0;\n}",
-  "README.md": "# My CodePad Project\n\nThis is a sample markdown file.",
+  "README.md": "# CodePad Demo\n\nThis is a **Markdown** file.\n\n## Features\n\n*   Code Editing\n*   File Browser\n*   AI Chat\n*   PDF Viewing\n*   Markdown Preview\n\n```javascript\nconsole.log('Hello from Markdown!');\n```\n\n> You can select this file to see the preview.",
   "sample.pdf": samplePdfUrl, // Store the URL for the PDF
+  "document.md": "## Another Markdown File\n\nThis demonstrates loading different `.md` files.\n\n* Item 1\n* Item 2\n\n[Link to Google](https://google.com)",
 };
 
 /**
@@ -43,7 +44,7 @@ export async function listFiles(): Promise<string[]> {
 export async function readFile(fileName: string): Promise<string> {
   await simulateDelay(500); // Simulate network delay
   if (fileName in mockFileSystem) {
-    return mockFileSystem[fileName]; // Returns text content or PDF URL
+    return mockFileSystem[fileName]; // Returns text content, Markdown content, or PDF URL
   } else {
     throw new Error(`File not found: ${fileName}`);
   }
@@ -51,7 +52,8 @@ export async function readFile(fileName: string): Promise<string> {
 
 /**
  * Saves content to a specific file.
- * This mock function does not handle saving PDF files differently.
+ * This mock function does not handle saving PDF or Markdown files differently.
+ * Saving Markdown content would ideally update the preview if applicable.
  * @param fileName The name of the file to save.
  * @param content The content to save to the file.
  * @returns A promise that resolves when the file is saved.
@@ -62,26 +64,29 @@ export async function saveFile(fileName: string, content: string): Promise<void>
   // if (Math.random() > 0.85) {
   //   throw new Error("Network error: Failed to save file.");
   // }
-  if (fileName.endsWith('.pdf')) {
-      console.warn(`Saving PDF files (${fileName}) is not fully supported in this mock implementation.`);
-      // In a real backend, you'd handle PDF uploads/updates appropriately.
-      // For this mock, we'll just log and not modify the mockFileSystem entry if it's the sample PDF.
-      if (fileName !== 'sample.pdf') {
-         mockFileSystem[fileName] = content; // Treat as text/URL for non-sample PDFs for mock purposes
-      }
-      return;
-  }
 
-  if (fileName in mockFileSystem) {
+  // Block saving PDF/Markdown in this mock, only allow code saving
+   if (fileName.endsWith('.pdf')) {
+      console.warn(`Saving PDF files (${fileName}) is not supported in this mock implementation.`);
+      return Promise.reject(new Error("Saving PDF is not supported."));
+   }
+   if (fileName.endsWith('.md')) {
+        console.warn(`Saving Markdown files (${fileName}) is not supported in this mock implementation.`);
+        // Mock saving MD files by updating the content, but ideally, editing would happen elsewhere
+        // mockFileSystem[fileName] = content;
+        // console.log(`Mock saved content to ${fileName}:\n${content}`);
+        // return;
+       return Promise.reject(new Error("Saving Markdown is not supported."));
+   }
+
+  // Only allow saving for known, non-PDF/MD files or new non-PDF/MD files
+  if (fileName in mockFileSystem || !fileName.endsWith('.pdf') && !fileName.endsWith('.md')) {
      mockFileSystem[fileName] = content;
      console.log(`Saved content to ${fileName}:\n${content}`);
   } else {
-      // In this mock, we'll just add it. A real API might handle this differently.
-      mockFileSystem[fileName] = content;
-      console.log(`Created and saved content to new file ${fileName}:\n${content}`);
-      // Note: In a real app, saving a *new* file might require a different
-      // UI flow or confirmation, and listFiles would need to be re-fetched
-      // or the local state updated. This mock keeps it simple.
+      // Handle case where file is not known and is PDF/MD (should be blocked above)
+      console.error(`Attempted to save unknown or unsupported file type: ${fileName}`);
+      throw new Error(`Cannot save unsupported file type: ${fileName}`);
   }
 
 }
@@ -89,6 +94,7 @@ export async function saveFile(fileName: string, content: string): Promise<void>
 /**
  * Uploads a file. In this mock, it reads the content and calls saveFile.
  * For PDFs, it tries to represent it as a data URL (limited practical use in mock).
+ * Markdown files are read as text.
  * @param file The file object to upload.
  * @returns A promise that resolves when the file is uploaded.
  */
@@ -101,7 +107,23 @@ export async function uploadFile(file: File): Promise<void> {
        reader.onload = async (e) => {
          try {
            const content = e.target?.result as string; // Content as text or data URL
-           await saveFile(file.name, content); // Use saveFile to add/update in mock
+           // Don't allow uploading PDFs/MDs via this method in the mock if saving is disabled
+            if (file.name.endsWith('.pdf')) {
+                console.warn("PDF upload mocked, but saving is disabled.");
+                mockFileSystem[file.name] = content; // Store Data URL for mock purposes
+                // reject(new Error("Uploading PDF is not fully supported for saving."));
+                 resolve(); // Allow mock upload for viewing
+                return;
+            }
+             if (file.name.endsWith('.md')) {
+                console.warn("Markdown upload mocked, but saving is disabled.");
+                 mockFileSystem[file.name] = content; // Store text content for mock purposes
+                // reject(new Error("Uploading Markdown is not fully supported for saving."));
+                 resolve(); // Allow mock upload for viewing
+                return;
+            }
+
+           await saveFile(file.name, content); // Use saveFile to add/update in mock for code files
            resolve();
          } catch (saveError) {
            reject(saveError);
@@ -112,11 +134,11 @@ export async function uploadFile(file: File): Promise<void> {
          reject(new Error(`Error reading file: ${reader.error}`));
        };
 
-        // Read as text for non-PDFs, as Data URL for PDFs (basic mock handling)
+        // Read as text for non-PDFs (including Markdown), as Data URL for PDFs
         if (file.type === 'application/pdf') {
              reader.readAsDataURL(file); // Read PDF as Data URL for mock
         } else {
-            reader.readAsText(file); // Read other files as text
+            reader.readAsText(file); // Read other files (including .md) as text
         }
      });
 }

@@ -130,6 +130,40 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 148 68% 35%;
+
+    /* Tailwind Typography Dark Mode Styles */
+    --tw-prose-body: hsl(var(--foreground));
+    --tw-prose-headings: hsl(var(--foreground));
+    --tw-prose-lead: hsl(var(--muted-foreground));
+    --tw-prose-links: hsl(var(--primary));
+    --tw-prose-bold: hsl(var(--foreground));
+    --tw-prose-counters: hsl(var(--muted-foreground));
+    --tw-prose-bullets: hsl(var(--border));
+    --tw-prose-hr: hsl(var(--border));
+    --tw-prose-quotes: hsl(var(--foreground));
+    --tw-prose-quote-borders: hsl(var(--primary));
+    --tw-prose-captions: hsl(var(--muted-foreground));
+    --tw-prose-code: hsl(var(--primary)); /* Inline code text */
+    --tw-prose-pre-code: hsl(var(--card-foreground)); /* Code block text */
+    --tw-prose-pre-bg: hsl(var(--card)); /* Code block background */
+    --tw-prose-th-borders: hsl(var(--border));
+    --tw-prose-td-borders: hsl(var(--border));
+    --tw-prose-invert-body: hsl(var(--foreground));
+    --tw-prose-invert-headings: hsl(var(--foreground));
+    --tw-prose-invert-lead: hsl(var(--muted-foreground));
+    --tw-prose-invert-links: hsl(var(--primary));
+    --tw-prose-invert-bold: hsl(var(--foreground));
+    --tw-prose-invert-counters: hsl(var(--muted-foreground));
+    --tw-prose-invert-bullets: hsl(var(--border));
+    --tw-prose-invert-hr: hsl(var(--border));
+    --tw-prose-invert-quotes: hsl(var(--foreground));
+    --tw-prose-invert-quote-borders: hsl(var(--primary));
+    --tw-prose-invert-captions: hsl(var(--muted-foreground));
+    --tw-prose-invert-code: hsl(var(--primary-foreground)); /* Inline code text */
+    --tw-prose-invert-pre-code: hsl(var(--card-foreground)); /* Code block text */
+    --tw-prose-invert-pre-bg: hsl(var(--muted)); /* Code block background */
+    --tw-prose-invert-th-borders: hsl(var(--border));
+    --tw-prose-invert-td-borders: hsl(var(--border));
   }
 }
 
@@ -288,7 +322,7 @@ pre[class*="language-"] {
   background: hsl(var(--primary) / 0.8); /* Darker green on hover */
 }
 
-/* Consistent scrollbar for Output and Chat Panels (using secondary colors - gray) */
+/* Consistent scrollbar for Output, Chat, PDF, Markdown Panels (using secondary colors - gray) */
 .output-panel ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -306,4 +340,30 @@ pre[class*="language-"] {
 
 .output-panel ::-webkit-scrollbar-thumb:hover {
    background: hsl(var(--muted-foreground)); /* Darker on hover */
+}
+
+/* Tailwind Typography Prose styles for Markdown */
+.prose {
+    /* Reset base prose colors to use CSS variables */
+    --tw-prose-body: hsl(var(--foreground));
+    --tw-prose-headings: hsl(var(--foreground));
+    --tw-prose-lead: hsl(var(--muted-foreground));
+    --tw-prose-links: hsl(var(--primary));
+    --tw-prose-bold: hsl(var(--foreground));
+    --tw-prose-counters: hsl(var(--muted-foreground));
+    --tw-prose-bullets: hsl(var(--border));
+    --tw-prose-hr: hsl(var(--border));
+    --tw-prose-quotes: hsl(var(--foreground));
+    --tw-prose-quote-borders: hsl(var(--primary));
+    --tw-prose-captions: hsl(var(--muted-foreground));
+    --tw-prose-code: hsl(var(--primary)); /* Inline code text */
+    --tw-prose-pre-code: hsl(var(--card-foreground)); /* Code block text */
+    --tw-prose-pre-bg: hsl(var(--card)); /* Code block background */
+    --tw-prose-th-borders: hsl(var(--border));
+    --tw-prose-td-borders: hsl(var(--border));
+}
+
+.prose code::before,
+.prose code::after {
+    content: none; /* Remove default backticks around inline code */
 }

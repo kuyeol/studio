@@ -5,10 +5,12 @@ import * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
-import { Folder, File as FileIcon, AlertCircle, RefreshCw, X, Upload, Loader2, FileText } from "lucide-react"; // Add Upload, Loader2, FileText
+import { Folder, File as FileIcon, AlertCircle, RefreshCw, X, Upload, Loader2, FileText, FileType } from "lucide-react"; // Add Upload, Loader2, FileText, FileType
 import { listFiles, uploadFile } from "@/services/file-api"; // Use uploadFile
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { SheetClose } from "@/components/ui/sheet"; // Import SheetClose
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 
 
 interface FileBrowserProps {
@@ -16,12 +18,30 @@ interface FileBrowserProps {
   selectedFile: string | null;
 }
 
+
+// Helper Component for Wrapping Button with SheetClose on Mobile
+const FileButtonWrapper = ({ children, isMobile, ...props }: { children: React.ReactNode, isMobile: boolean, [key: string]: any }) => {
+  if (isMobile) {
+    return <SheetClose {...props}>{children}</SheetClose>;
+  }
+  return <React.Fragment {...props}>{children}</React.Fragment>;
+};
+
+
 // Helper to determine the correct icon
 const getFileIcon = (fileName: string) => {
-    if (fileName.toLowerCase().endsWith('.pdf')) {
+    const lowerCaseName = fileName.toLowerCase();
+    if (lowerCaseName.endsWith('.pdf')) {
         return <FileText className="mr-2 h-4 w-4 flex-shrink-0" />;
     }
-    return <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />;
+    if (lowerCaseName.endsWith('.md')) {
+        return <FileType className="mr-2 h-4 w-4 flex-shrink-0" />; // Use FileType for Markdown
+    }
+    // Add more specific icons based on extensions if needed (e.g., .js, .ts, .css)
+    // if (lowerCaseName.endsWith('.js') || lowerCaseName.endsWith('.ts')) {
+    //     return <Code className="mr-2 h-4 w-4 flex-shrink-0" />;
+    // }
+    return <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />; // Default file icon
 };
 
 
@@ -32,6 +52,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
   const [error, setError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null); // Ref for hidden file input
   const { toast } = useToast(); // Initialize toast
+  const isMobile = useIsMobile(); // Check if mobile
 
   const fetchFileList = React.useCallback(async () => {
     setIsLoading(true);
@@ -70,14 +91,14 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
 
     setIsUploading(true);
     try {
-      await uploadFile(file); // Use the new uploadFile API
+      await uploadFile(file); // Use the uploadFile API
       toast({
         title: "File Uploaded",
         description: `Successfully uploaded ${file.name}.`,
       });
       await fetchFileList(); // Refresh the file list
-      // Optionally, select the newly uploaded file
-      // onSelectFile(file.name);
+      // Automatically select the newly uploaded file
+      onSelectFile(file.name);
     } catch (err: any) {
       console.error("Error uploading file:", err);
       toast({
@@ -103,7 +124,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept=".js,.ts,.css,.html,.xml,.md,.txt,.json,.pdf" // Include .pdf
+        accept=".js,.ts,.css,.html,.xml,.md,.txt,.json,.pdf,.java" // Include common code/text files, PDF, MD
       />
        {/* Header remains card background for visual separation */}
       <div className="p-3 border-b border-border flex items-center justify-between bg-card text-card-foreground">
@@ -172,22 +193,23 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ): (
           <div className="space-y-1">
             {files.map((file) => (
-                <Button
-                  key={file}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-left h-8 px-2 text-secondary-foreground", // Ensure default text color
-                    selectedFile === file
-                      ? "bg-accent text-accent-foreground" // Selected uses accent
-                      : "hover:bg-muted hover:text-muted-foreground" // Hover uses muted
-                  )}
-                  onClick={() => onSelectFile(file)}
-                  title={file}
-                >
-                  {getFileIcon(file)} {/* Use helper for icon */}
-                  <span className="truncate flex-grow">{file}</span>
-                </Button>
+               <FileButtonWrapper key={file} isMobile={isMobile} asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "w-full justify-start text-left h-8 px-2 text-secondary-foreground", // Ensure default text color
+                      selectedFile === file
+                        ? "bg-accent text-accent-foreground" // Selected uses accent
+                        : "hover:bg-muted hover:text-muted-foreground" // Hover uses muted
+                    )}
+                    onClick={() => onSelectFile(file)}
+                    title={file}
+                  >
+                    {getFileIcon(file)} {/* Use helper for icon */}
+                    <span className="truncate flex-grow">{file}</span>
+                  </Button>
+               </FileButtonWrapper>
             ))}
           </div>
         )}
