@@ -246,7 +246,7 @@ export default function CodePad() {
                      {isEditorVisible && <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />}
                      {/* If editor is hidden, add handle before chat */}
                      {!isEditorVisible && <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />}
-                     <ResizablePanel defaultSize={onlyChatVisible ? 100 - fileBrowserSize : chatPanelSize} minSize={15} maxSize={50}>
+                     <ResizablePanel defaultSize={onlyChatVisible ? 100 - fileBrowserSize : chatPanelSize} minSize={15}> {/* Removed maxSize={50} */}
                          <ChatPanel
                              messages={messages || []}
                              onSendMessage={handleSendMessage}
