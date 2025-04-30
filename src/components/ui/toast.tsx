@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 const ToastProvider = ToastPrimitives.Provider
 
 const ToastViewport = React.forwardRef<
+
   React.ElementRef<typeof ToastPrimitives.Viewport>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
 >(({ className, ...props }, ref) => (
@@ -45,6 +46,7 @@ const Toast = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
+
   return (
     <ToastPrimitives.Root
       ref={ref}
@@ -59,6 +61,7 @@ const ToastAction = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Action>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
 >(({ className, ...props }, ref) => (
+
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
@@ -74,6 +77,7 @@ const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
 >(({ className, ...props }, ref) => (
+
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
@@ -92,6 +96,7 @@ const ToastTitle = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Title>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
 >(({ className, ...props }, ref) => (
+
   <ToastPrimitives.Title
     ref={ref}
     className={cn("text-sm font-semibold", className)}
@@ -104,6 +109,7 @@ const ToastDescription = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Description>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
 >(({ className, ...props }, ref) => (
+
   <ToastPrimitives.Description
     ref={ref}
     className={cn("text-sm opacity-90", className)}
@@ -113,6 +119,7 @@ const ToastDescription = React.forwardRef<
 ToastDescription.displayName = ToastPrimitives.Description.displayName
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
+
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
@@ -126,4 +133,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+
 }
