@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -24,7 +23,7 @@ const FileButtonWrapper = ({ children, isMobile, ...props }: { children: React.R
   if (isMobile) {
     return <SheetClose {...props}>{children}</SheetClose>;
   }
-  return <React.Fragment {...props}>{children}</React.Fragment>;
+  return <>{children}</>;
 };
 
 
@@ -193,7 +192,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ): (
           <div className="space-y-1">
             {files.map((file) => (
-               <FileButtonWrapper key={file} isMobile={isMobile} asChild>
+               <FileButtonWrapper key={file} isMobile={isMobile} >
                   <Button
                     variant="ghost"
                     size="sm"
@@ -217,3 +216,4 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
     </div>
   );
 }
+
