@@ -241,6 +241,10 @@ export default function CodePad() {
                  </SheetTrigger>
                  {/* Ensure SheetContent has appropriate styling */}
                  <SheetContent side="bottom" className="w-full h-2/3 p-0 flex flex-col" >
+                   {/* Add accessible title */}
+                    <SheetHeader className="sr-only">
+                       <SheetTitle>File Browser</SheetTitle>
+                     </SheetHeader>
                    <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
                  </SheetContent>
                </Sheet>
@@ -364,6 +368,10 @@ export default function CodePad() {
             <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
                  {/* SheetContent now renders the ChatPanel */}
                  <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col">
+                      {/* Add accessible title */}
+                      <SheetHeader className="sr-only">
+                        <SheetTitle>AI Assistant Chat</SheetTitle>
+                      </SheetHeader>
                      <ChatPanel
                         messages={messages || []} // Pass messages or empty array
                         onSendMessage={handleSendMessage}
@@ -375,3 +383,4 @@ export default function CodePad() {
     </div>
   );
 }
+
