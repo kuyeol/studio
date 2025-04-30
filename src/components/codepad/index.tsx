@@ -273,24 +273,36 @@ export default function CodePad() {
 
 
   const renderMobileLayout = () => (
-    <div className="flex-grow flex flex-col border border-border rounded-lg overflow-hidden">
-      {/* Editor */}
-      <div className="flex-grow-[3] min-h-0 bg-card"> {/* Reduced flex */}
-          <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
-      </div>
-      {/* Output panel below */}
-      <div className="flex-grow-[2] min-h-0 border-t border-border"> {/* Reduced flex */}
-          <OutputPanel output={output} />
-      </div>
-      {/* Chat panel below Output - Larger */}
-      <div className="flex-grow-[5] min-h-0 border-t border-border"> {/* Increased flex */}
+     // Use ResizablePanelGroup for vertical resizing on mobile
+    <ResizablePanelGroup
+      direction="vertical"
+      className="flex-grow rounded-lg border border-border overflow-hidden"
+    >
+      {/* Top Panel: Editor + Output (Resizable internally) */}
+      <ResizablePanel defaultSize={50} minSize={20}>
+          <ResizablePanelGroup direction="vertical" className="h-full">
+              <ResizablePanel defaultSize={60} minSize={20} className="bg-card">
+                  <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
+              </ResizablePanel>
+              <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
+              <ResizablePanel defaultSize={40} minSize={10}>
+                  <OutputPanel output={output} />
+              </ResizablePanel>
+          </ResizablePanelGroup>
+      </ResizablePanel>
+
+      {/* Handle */}
+      <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
+
+       {/* Bottom Panel: Chat */}
+      <ResizablePanel defaultSize={50} minSize={20}>
           <ChatPanel
             messages={messages || []}
             onSendMessage={handleSendMessage}
             isLoading={isChatLoading}
           />
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 
   return (
