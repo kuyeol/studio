@@ -6,8 +6,8 @@
 - Output Panel: A panel to display the output or results of the executed code.
 - Code Execution: Functionality to execute code (Node.js) and display results in the output panel.
 
-## Style Guidelines:
 
+## Style Guidelines:
 - Primary color: Dark gray (#333) for the editor background.
 - Secondary color: Light gray (#f0f0f0) for the output panel background.
 - Accent: Teal (#008080) for interactive elements and highlights.
@@ -15,6 +15,7 @@
 - Simple, monochromatic icons for actions like 'Run', 'Clear', and 'Save'.
 - Subtle transition animations for code execution and output display.
 
+
 ## Original User Request:
-colab 이나 쥬피터랩 과같은 에디터 구현
+colab 이나 쥬피터랩과 같은 에디터 구현
   
