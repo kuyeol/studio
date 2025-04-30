@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Message } from "@/ai/flows/chat-flow"; // Import the Message type
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
-import { SheetClose } from "@/components/ui/sheet"; // Import SheetClose
+// Removed: import { useIsMobile } from "@/hooks/use-mobile";
+// Removed: import { SheetClose } from "@/components/ui/sheet";
 
 interface ChatPanelProps {
   messages: Message[]; // Keep the type definition as Message[]
@@ -21,7 +21,7 @@ interface ChatPanelProps {
 export default function ChatPanel({ messages = [], onSendMessage, isLoading }: ChatPanelProps) { // Default messages to []
   const [inputMessage, setInputMessage] = React.useState("");
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile(); // Check if mobile
+  // Removed: const isMobile = useIsMobile(); // Check if mobile
 
   const handleSend = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -52,13 +52,13 @@ export default function ChatPanel({ messages = [], onSendMessage, isLoading }: C
     // Use bg-secondary for the chat panel background for slight distinction
     // Removed md:border-l md:border-t-0 as this is now self-contained for mobile sheets
     <div className="flex flex-col h-full bg-secondary text-secondary-foreground border-t border-border"> {/* Added top border for bottom sheet */}
-       {/* Header - SheetClose is now outside if needed */}
+       {/* Header - Removed SheetClose */}
        <div className="p-4 border-b border-border flex items-center justify-between gap-2 bg-card text-card-foreground flex-shrink-0"> {/* Header remains card background */}
           <div className="flex items-center gap-2">
              <Sparkles className="h-5 w-5 text-primary" />
              <h2 className="text-lg font-semibold">AI Assistant</h2>
           </div>
-           {/* Mobile close button is handled by SheetContent's default X */}
+           {/* Mobile close button is handled by SheetContent's default X - Removed */}
        </div>
       {/* ScrollArea uses output-panel style for scrollbar, content padding added here */}
       <ScrollArea className="flex-grow p-4 output-panel" ref={scrollAreaRef}>

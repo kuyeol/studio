@@ -51,7 +51,7 @@ export default function CodePad() {
 
   // State for mobile sheets
   const [isFileSheetOpen, setIsFileSheetOpen] = React.useState(false);
-  const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false); // State for mobile chat sheet
+  // Removed state for mobile chat sheet: const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false);
 
   // Dummy execution function - replace with actual backend call
   const executeCode = async () => {
@@ -213,16 +213,23 @@ export default function CodePad() {
   );
 
   const renderMobileLayout = () => (
-    <div className="flex-grow flex flex-col border border-border rounded-lg overflow-hidden"> {/* Added border and rounded */}
+    <div className="flex-grow flex flex-col border border-border rounded-lg overflow-hidden">
       {/* Editor takes most space */}
-      <div className="flex-grow-[6] min-h-0 bg-card"> {/* Editor panel gets card background */}
+      <div className="flex-grow-[5] min-h-0 bg-card"> {/* Adjusted flex */}
           <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
       </div>
       {/* Output panel below */}
-      <div className="flex-grow-[4] min-h-0 border-t border-border">
+      <div className="flex-grow-[3] min-h-0 border-t border-border"> {/* Adjusted flex */}
           <OutputPanel output={output} />
       </div>
-      {/* Chat panel is now rendered in a Sheet below */}
+      {/* Chat panel below Output */}
+      <div className="flex-grow-[4] min-h-0 border-t border-border"> {/* Added ChatPanel */}
+          <ChatPanel
+            messages={messages || []}
+            onSendMessage={handleSendMessage}
+            isLoading={isChatLoading}
+          />
+      </div>
     </div>
   );
 
@@ -304,11 +311,7 @@ export default function CodePad() {
                      <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" /> // Icon color
                      Clear Output
                    </DropdownMenuItem>
-                   {/* Trigger for Chat Sheet */}
-                   <DropdownMenuItem onSelect={() => setIsChatSheetOpen(true)}>
-                       <MessageSquare className="mr-2 h-4 w-4" />
-                       Chat with AI
-                   </DropdownMenuItem>
+                    {/* Removed trigger for Chat Sheet */}
                  </DropdownMenuContent>
                </DropdownMenu>
 
@@ -363,24 +366,7 @@ export default function CodePad() {
       {/* Main Layout */}
        {isMobile ? renderMobileLayout() : renderDesktopLayout()}
 
-        {/* Mobile Chat Sheet - Changed side and height */}
-        {isMobile && (
-            <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
-                 {/* SheetContent now renders the ChatPanel */}
-                 <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col">
-                      {/* Add accessible title */}
-                      <SheetHeader className="sr-only">
-                        <SheetTitle>AI Assistant Chat</SheetTitle>
-                      </SheetHeader>
-                     <ChatPanel
-                        messages={messages || []} // Pass messages or empty array
-                        onSendMessage={handleSendMessage}
-                        isLoading={isChatLoading}
-                      />
-                 </SheetContent>
-            </Sheet>
-        )}
+        {/* Removed Mobile Chat Sheet */}
     </div>
   );
 }
-
