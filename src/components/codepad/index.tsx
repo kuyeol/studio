@@ -51,7 +51,6 @@ export default function CodePad() {
 
   // State for mobile sheets
   const [isFileSheetOpen, setIsFileSheetOpen] = React.useState(false);
-  // Removed state for mobile chat sheet: const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false);
 
   // Dummy execution function - replace with actual backend call
   const executeCode = async () => {
@@ -214,16 +213,16 @@ export default function CodePad() {
 
   const renderMobileLayout = () => (
     <div className="flex-grow flex flex-col border border-border rounded-lg overflow-hidden">
-      {/* Editor takes most space */}
-      <div className="flex-grow-[5] min-h-0 bg-card"> {/* Adjusted flex */}
+      {/* Editor */}
+      <div className="flex-grow-[3] min-h-0 bg-card"> {/* Reduced flex */}
           <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
       </div>
       {/* Output panel below */}
-      <div className="flex-grow-[3] min-h-0 border-t border-border"> {/* Adjusted flex */}
+      <div className="flex-grow-[2] min-h-0 border-t border-border"> {/* Reduced flex */}
           <OutputPanel output={output} />
       </div>
-      {/* Chat panel below Output */}
-      <div className="flex-grow-[4] min-h-0 border-t border-border"> {/* Added ChatPanel */}
+      {/* Chat panel below Output - Larger */}
+      <div className="flex-grow-[5] min-h-0 border-t border-border"> {/* Increased flex */}
           <ChatPanel
             messages={messages || []}
             onSendMessage={handleSendMessage}
@@ -249,7 +248,7 @@ export default function CodePad() {
                  {/* Ensure SheetContent has appropriate styling */}
                  <SheetContent side="bottom" className="w-full h-2/3 p-0 flex flex-col" >
                    {/* Add accessible title */}
-                    <SheetHeader className="sr-only">
+                    <SheetHeader className="p-3 border-b border-border"> {/* Added header */}
                        <SheetTitle>File Browser</SheetTitle>
                      </SheetHeader>
                    <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
@@ -311,7 +310,6 @@ export default function CodePad() {
                      <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" /> // Icon color
                      Clear Output
                    </DropdownMenuItem>
-                    {/* Removed trigger for Chat Sheet */}
                  </DropdownMenuContent>
                </DropdownMenu>
 
@@ -366,7 +364,6 @@ export default function CodePad() {
       {/* Main Layout */}
        {isMobile ? renderMobileLayout() : renderDesktopLayout()}
 
-        {/* Removed Mobile Chat Sheet */}
     </div>
   );
 }
