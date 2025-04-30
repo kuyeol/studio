@@ -5,8 +5,8 @@ import * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
-import { Folder, File as FileIcon, AlertCircle, RefreshCw, X, Upload, Loader2 } from "lucide-react"; // Add Upload, Loader2
-import { listFiles, saveFile } from "@/services/file-api"; // Import API functions
+import { Folder, File as FileIcon, AlertCircle, RefreshCw, X, Upload, Loader2, FileText } from "lucide-react"; // Add Upload, Loader2, FileText
+import { listFiles, uploadFile } from "@/services/file-api"; // Use uploadFile
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
 
@@ -15,6 +15,15 @@ interface FileBrowserProps {
   onSelectFile: (fileName: string) => void;
   selectedFile: string | null;
 }
+
+// Helper to determine the correct icon
+const getFileIcon = (fileName: string) => {
+    if (fileName.toLowerCase().endsWith('.pdf')) {
+        return <FileText className="mr-2 h-4 w-4 flex-shrink-0" />;
+    }
+    return <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />;
+};
+
 
 export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserProps) {
   const [files, setFiles] = React.useState<string[]>([]);
@@ -61,13 +70,14 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
 
     setIsUploading(true);
     try {
-      const content = await readFileContent(file);
-      await saveFile(file.name, content); // Use the existing saveFile API
+      await uploadFile(file); // Use the new uploadFile API
       toast({
         title: "File Uploaded",
         description: `Successfully uploaded ${file.name}.`,
       });
       await fetchFileList(); // Refresh the file list
+      // Optionally, select the newly uploaded file
+      // onSelectFile(file.name);
     } catch (err: any) {
       console.error("Error uploading file:", err);
       toast({
@@ -84,21 +94,6 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
     }
   };
 
-  // Helper function to read file content as text
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        resolve(e.target?.result as string);
-      };
-      reader.onerror = (e) => {
-        reject(new Error(`Error reading file: ${reader.error}`));
-      };
-      reader.readAsText(file); // Read file as text
-    });
-  };
-
-
   return (
      // Use bg-secondary for the file browser panel background
     <div className="flex flex-col h-full bg-secondary text-secondary-foreground border-t border-border md:border-r md:border-t-0">
@@ -108,7 +103,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept=".js,.ts,.css,.html,.xml,.md,.txt,.json" // Optional: Specify acceptable file types
+        accept=".js,.ts,.css,.html,.xml,.md,.txt,.json,.pdf" // Include .pdf
       />
        {/* Header remains card background for visual separation */}
       <div className="p-3 border-b border-border flex items-center justify-between bg-card text-card-foreground">
@@ -177,7 +172,6 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ): (
           <div className="space-y-1">
             {files.map((file) => (
-                // Render Button directly, Sheet closing is handled in CodePad's onSelectFile
                 <Button
                   key={file}
                   variant="ghost"
@@ -191,7 +185,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
                   onClick={() => onSelectFile(file)}
                   title={file}
                 >
-                  <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                  {getFileIcon(file)} {/* Use helper for icon */}
                   <span className="truncate flex-grow">{file}</span>
                 </Button>
             ))}
@@ -201,4 +195,3 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
     </div>
   );
 }
-

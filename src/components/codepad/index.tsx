@@ -11,8 +11,9 @@ import CodeEditor from "./code-editor";
 import OutputPanel from "./output-panel";
 import ChatPanel from "./chat-panel";
 import FileBrowser from "./file-browser"; // Import FileBrowser
+import PdfViewer from "./pdf-viewer"; // Import PdfViewer
 import { Button } from "@/components/ui/button";
-import { Play, Trash2, MessageSquare, Save, Loader2, File as FileIcon, PanelLeft, X, Menu, PanelBottom, Code, PanelRightOpen, PanelLeftOpen } from "lucide-react"; // Add Code, PanelRightOpen, PanelLeftOpen
+import { Play, Trash2, Save, Loader2, File as FileIcon, PanelLeft, X, Menu, PanelBottom, Code, PanelRightOpen, PanelLeftOpen, FileText } from "lucide-react"; // Add Code, PanelRightOpen, PanelLeftOpen, FileText
 import { chat, type Message, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { useToast } from "@/hooks/use-toast";
 import { readFile, saveFile } from "@/services/file-api"; // Import file API functions
@@ -23,7 +24,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetClose
 } from "@/components/ui/sheet"; // Import Sheet components
 import {
   DropdownMenu,
@@ -33,15 +33,35 @@ import {
 } from "@/components/ui/dropdown-menu"; // Import Dropdown components
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip
+import { pdfjs } from 'react-pdf';
+
+// Configure pdfjs worker
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
+
+
+// Helper to determine file type
+const getFileType = (fileName: string | null): 'code' | 'pdf' | 'unknown' => {
+  if (!fileName) return 'unknown';
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  if (extension === 'pdf') return 'pdf';
+  // Assume code for common script/markup extensions
+  if (['js', 'ts', 'jsx', 'tsx', 'css', 'html', 'xml', 'md', 'json', 'java'].includes(extension || '')) return 'code';
+  return 'unknown'; // Or handle other types like images, etc.
+};
 
 
 export default function CodePad() {
   const [code, setCode] = React.useState<string>("// Select a file or start coding!");
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null); // State for PDF URL
   const [output, setOutput] = React.useState<string[]>([]);
   const [isRunning, setIsRunning] = React.useState(false);
   const [selectedFile, setSelectedFile] = React.useState<string | null>(null);
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
   const [isSavingFile, setIsSavingFile] = React.useState(false);
+  const [fileType, setFileType] = React.useState<'code' | 'pdf' | 'unknown'>('unknown'); // State for file type
 
   // State for Chat
   const [messages, setMessages] = React.useState<Message[]>([]);
@@ -53,23 +73,27 @@ export default function CodePad() {
   const [isFileSheetOpen, setIsFileSheetOpen] = React.useState(false);
 
   // State for panel visibility (Desktop only)
-  const [isEditorVisible, setIsEditorVisible] = React.useState(true);
-  const [isChatVisible, setIsChatVisible] = React.useState(true); // Keep chat visible by default
+  const [isEditorVisible, setIsEditorVisible] = React.useState(true); // Combined Editor/PDF view
+  const [isChatVisible, setIsChatVisible] = React.useState(true);
 
-  // Dummy execution function - replace with actual backend call
+  // Dummy execution function - update relevance for PDFs
   const executeCode = async () => {
+    if (fileType !== 'code') {
+         toast({
+            title: "Cannot Execute",
+            description: "Execution is only available for code files.",
+            variant: "destructive", // Use destructive variant for errors/warnings
+         });
+        return;
+    }
+
     setIsRunning(true);
     setOutput([`Executing ${selectedFile ? `'${selectedFile}'` : 'code'}...`]);
 
-    // Simulate async execution
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     try {
-      // In a real scenario, this would be an API call to a backend service
-      // that safely executes the Node.js code in a sandboxed environment.
-      // For this frontend demo, we'll just log the code.
       console.log("Executing code:\n", code);
-       // Simulate output based on code - very basic example
       let simulatedOutput = `Simulated execution of ${selectedFile ? `'${selectedFile}'` : 'unsaved code'} complete.`;
       if (code.includes("console.log('Hello, CodePad!')")) {
          simulatedOutput += "\nHello, CodePad!";
@@ -87,14 +111,12 @@ export default function CodePad() {
   };
 
   // Toggle functions for desktop panel visibility
-  const toggleEditorVisibility = () => {
-     // Prevent hiding both panels
+  const toggleEditorPdfVisibility = () => {
     if (!isChatVisible && isEditorVisible) return;
     setIsEditorVisible(!isEditorVisible);
   };
 
   const toggleChatVisibility = () => {
-     // Prevent hiding both panels
      if (!isEditorVisible && isChatVisible) return;
     setIsChatVisible(!isChatVisible);
   };
@@ -102,23 +124,54 @@ export default function CodePad() {
 
   // Function to handle selecting a file
   const handleSelectFile = async (fileName: string) => {
-    if (isLoadingFile || isSavingFile) return; // Prevent selection while loading/saving
+    if (isLoadingFile || isSavingFile) return;
     setIsLoadingFile(true);
     setSelectedFile(fileName);
-    setCode(`// Loading ${fileName}...`);
-    setIsFileSheetOpen(false); // Close sheet on selection (mobile)
+    const type = getFileType(fileName);
+    setFileType(type);
+    setCode(type === 'code' ? `// Loading ${fileName}...` : ''); // Clear code for non-code files
+    setPdfUrl(null); // Clear previous PDF URL
+    setIsFileSheetOpen(false);
+
     try {
-      const content = await readFile(fileName);
-      setCode(content);
-      setOutput([`Loaded file: ${fileName}`]);
-       toast({
-        title: "File Loaded",
-        description: `Successfully loaded ${fileName}.`,
-      });
+      const contentOrUrl = await readFile(fileName); // This now returns content or URL
+
+      if (type === 'pdf') {
+          // Ensure the content is a valid URL (basic check)
+          if (typeof contentOrUrl === 'string' && (contentOrUrl.startsWith('http') || contentOrUrl.startsWith('/') || contentOrUrl.startsWith('data:application/pdf'))) {
+            setPdfUrl(contentOrUrl);
+            setOutput([`Loaded PDF: ${fileName}`]);
+             toast({
+                title: "PDF Loaded",
+                description: `Successfully loaded ${fileName}.`,
+            });
+          } else {
+             throw new Error("Invalid PDF URL or content received.");
+          }
+      } else if (type === 'code') {
+         setCode(contentOrUrl);
+         setOutput([`Loaded file: ${fileName}`]);
+          toast({
+            title: "File Loaded",
+            description: `Successfully loaded ${fileName}.`,
+          });
+      } else {
+         // Handle other unknown types if necessary
+         setCode(`// Cannot display file type for ${fileName}`);
+         setOutput([`Loaded file with unknown type: ${fileName}`]);
+         toast({
+            title: "File Loaded",
+            description: `Loaded ${fileName}, but preview is not supported for this type.`,
+            variant: "default" // Use default variant for informational messages
+         });
+      }
+
     } catch (error) {
       console.error("Error loading file:", error);
       setCode(`// Error loading ${fileName}\n// Please check the console for details.`);
+      setPdfUrl(null); // Clear PDF URL on error
       setSelectedFile(null); // Reset selection on error
+      setFileType('unknown'); // Reset file type
       toast({
         variant: "destructive",
         title: "File Load Error",
@@ -131,10 +184,19 @@ export default function CodePad() {
 
   // Function to handle saving the current file
   const handleSaveFile = async () => {
-    if (!selectedFile || isSavingFile || isLoadingFile) return;
+    if (!selectedFile || isSavingFile || isLoadingFile || fileType === 'pdf') { // Disable saving for PDF
+        if(fileType === 'pdf') {
+             toast({
+                title: "Cannot Save",
+                description: "Saving PDF files directly is not supported.",
+                variant: "destructive",
+            });
+        }
+        return;
+    }
     setIsSavingFile(true);
     try {
-      await saveFile(selectedFile, code);
+      await saveFile(selectedFile, code); // Save code content
       setOutput([`Saved file: ${selectedFile}`]);
        toast({
         title: "File Saved",
@@ -162,18 +224,13 @@ export default function CodePad() {
     setIsChatLoading(true);
 
     try {
-      // Prepare input for the chat flow
       const chatInput: ChatInput = {
-        history: messages || [], // Pass the current history, default to empty array
+        history: messages || [],
         message: userMessage,
       };
-
-      // Call the Genkit flow
       const result: ChatOutput = await chat(chatInput);
-
       const aiResponseMessage: Message = { role: "model", content: result.response };
-      setMessages((prevMessages = []) => [...prevMessages, aiResponseMessage]); // Ensure prevMessages is an array
-
+      setMessages((prevMessages = []) => [...prevMessages, aiResponseMessage]);
     } catch (error) {
       console.error("Error calling chat flow:", error);
       toast({
@@ -181,34 +238,58 @@ export default function CodePad() {
         title: "AI Chat Error",
         description: "Could not get response from AI. Please try again.",
       });
-      // Optionally remove the user message or add an error message to the chat
-       setMessages((prevMessages = []) => prevMessages.slice(0, -1)); // Ensure prevMessages is an array
+       setMessages((prevMessages = []) => prevMessages.slice(0, -1));
     } finally {
       setIsChatLoading(false);
     }
   };
 
+ // Renders the CodeEditor or PdfViewer based on fileType
+ const renderEditorOrViewer = () => {
+    if (isLoadingFile) {
+      return (
+        <div className="flex h-full items-center justify-center bg-card text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading file...
+        </div>
+      );
+    }
+
+    switch (fileType) {
+      case 'code':
+        return <CodeEditor code={code} setCode={setCode} disabled={isSavingFile} />;
+      case 'pdf':
+        return <PdfViewer fileUrl={pdfUrl} />;
+      case 'unknown':
+      default:
+        return (
+          <div className="flex h-full items-center justify-center bg-card text-muted-foreground p-4 text-center">
+            {selectedFile
+              ? `Preview for "${selectedFile}" is not available. Select a supported file type (.js, .ts, .css, .html, .md, .pdf, etc.).`
+              : "Select a file from the browser or start coding."}
+          </div>
+        );
+    }
+  };
+
+
   const renderDesktopLayout = () => {
      const onlyEditorVisible = isEditorVisible && !isChatVisible;
      const onlyChatVisible = !isEditorVisible && isChatVisible;
      const bothVisible = isEditorVisible && isChatVisible;
-     const neitherVisible = !isEditorVisible && !isChatVisible; // Should not happen due to toggle logic
+     const neitherVisible = !isEditorVisible && !isChatVisible;
 
-     // Calculate panel sizes dynamically
      let fileBrowserSize = 20;
      let editorPanelSize = 0;
      let chatPanelSize = 0;
 
      if (bothVisible) {
-        editorPanelSize = 50;
+        editorPanelSize = 50; // Editor/PDF panel
         chatPanelSize = 30;
      } else if (onlyEditorVisible) {
-         editorPanelSize = 80; // Takes remaining space
+         editorPanelSize = 80;
      } else if (onlyChatVisible) {
-         chatPanelSize = 80; // Takes remaining space
+         chatPanelSize = 80;
      } else {
-        // Fallback if somehow both are hidden (e.g., initial state before enforcement)
-        // Or display a message? For now, make editor take space.
          editorPanelSize = 80;
      }
 
@@ -220,19 +301,25 @@ export default function CodePad() {
                  <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
              </ResizablePanel>
 
-             {/* Editor Panel (Conditional) */}
+             {/* Editor/PDF Panel (Conditional) */}
              {isEditorVisible && (
                  <>
                     <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
                     <ResizablePanel defaultSize={onlyEditorVisible ? 100 - fileBrowserSize : editorPanelSize} minSize={15}>
                         <ResizablePanelGroup direction="vertical" className="flex-grow">
-                            <ResizablePanel defaultSize={60} minSize={20} className="bg-card rounded-t-lg">
-                                <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
+                            {/* Top: Editor or PDF Viewer */}
+                            <ResizablePanel defaultSize={60} minSize={20} className="bg-card rounded-t-lg overflow-hidden">
+                                 {renderEditorOrViewer()}
                             </ResizablePanel>
-                            <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
-                            <ResizablePanel defaultSize={40} minSize={10}>
-                                <OutputPanel output={output} />
-                            </ResizablePanel>
+                            {/* Bottom: Output Panel (Only shown for code files) */}
+                            {fileType === 'code' && (
+                                <>
+                                    <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
+                                    <ResizablePanel defaultSize={40} minSize={10}>
+                                        <OutputPanel output={output} />
+                                    </ResizablePanel>
+                                </>
+                            )}
                         </ResizablePanelGroup>
                     </ResizablePanel>
                  </>
@@ -242,11 +329,9 @@ export default function CodePad() {
              {/* Chat Panel (Conditional) */}
              {isChatVisible && (
                  <>
-                     {/* Show handle only if editor is also visible */}
                      {isEditorVisible && <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />}
-                     {/* If editor is hidden, add handle before chat */}
                      {!isEditorVisible && <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />}
-                     <ResizablePanel defaultSize={onlyChatVisible ? 100 - fileBrowserSize : chatPanelSize} minSize={15}> {/* Removed maxSize={50} */}
+                     <ResizablePanel defaultSize={onlyChatVisible ? 100 - fileBrowserSize : chatPanelSize} minSize={15}>
                          <ChatPanel
                              messages={messages || []}
                              onSendMessage={handleSendMessage}
@@ -256,13 +341,12 @@ export default function CodePad() {
                  </>
              )}
 
-            {/* Placeholder if both are hidden? */}
             {neitherVisible && (
                  <>
                  <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
                  <ResizablePanel defaultSize={80}>
                     <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">
-                       <p>Editor and Chat are hidden.</p>
+                       <p>Editor/Viewer and Chat are hidden.</p>
                     </div>
                  </ResizablePanel>
                  </>
@@ -273,25 +357,29 @@ export default function CodePad() {
 
 
   const renderMobileLayout = () => (
-     // Use ResizablePanelGroup for vertical resizing on mobile
     <ResizablePanelGroup
       direction="vertical"
       className="flex-grow rounded-lg border border-border overflow-hidden"
     >
-      {/* Top Panel: Editor + Output (Resizable internally) */}
+      {/* Top Panel: Editor/Viewer + Output (Resizable internally) */}
       <ResizablePanel defaultSize={50} minSize={20}>
           <ResizablePanelGroup direction="vertical" className="h-full">
-              <ResizablePanel defaultSize={60} minSize={20} className="bg-card">
-                  <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
+               {/* Top: Editor or PDF Viewer */}
+              <ResizablePanel defaultSize={fileType === 'code' ? 60 : 100} minSize={20} className="bg-card overflow-hidden">
+                  {renderEditorOrViewer()}
               </ResizablePanel>
-              <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
-              <ResizablePanel defaultSize={40} minSize={10}>
-                  <OutputPanel output={output} />
-              </ResizablePanel>
+               {/* Bottom: Output Panel (Only shown for code files) */}
+              {fileType === 'code' && (
+                <>
+                  <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
+                  <ResizablePanel defaultSize={40} minSize={10}>
+                      <OutputPanel output={output} />
+                  </ResizablePanel>
+                </>
+              )}
           </ResizablePanelGroup>
       </ResizablePanel>
 
-      {/* Handle */}
       <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
 
        {/* Bottom Panel: Chat */}
@@ -305,43 +393,45 @@ export default function CodePad() {
     </ResizablePanelGroup>
   );
 
+  // Helper to get the correct file icon
+  const getCurrentFileIcon = () => {
+      if (isLoadingFile) return <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />;
+      if (!selectedFile) return null; // Or a default icon if needed
+
+      return fileType === 'pdf'
+          ? <FileText className="h-4 w-4 flex-shrink-0" />
+          : <FileIcon className="h-4 w-4 flex-shrink-0" />;
+  };
+
+
   return (
-    // Wrap with TooltipProvider for desktop buttons
     <TooltipProvider delayDuration={100}>
-       <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden p-2"> {/* Added padding to body */}
-          <header className="flex items-center justify-between p-2 border-b border-border flex-shrink-0 mb-2 bg-card rounded-lg shadow-sm"> {/* Header gets card bg, rounded, shadow */}
+       <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden p-2">
+          <header className="flex items-center justify-between p-2 border-b border-border flex-shrink-0 mb-2 bg-card rounded-lg shadow-sm">
             {/* Left Side: Mobile File Trigger / Desktop File Indicator */}
-            <div className="flex items-center gap-2 text-sm min-w-0 flex-1"> {/* Allow flex-1 for file indicator */}
+            <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
                 {isMobile ? (
                    <Sheet open={isFileSheetOpen} onOpenChange={setIsFileSheetOpen}>
                     <SheetTrigger asChild>
                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                         <PanelBottom className="h-5 w-5" /> {/* Changed Icon */}
+                         <PanelBottom className="h-5 w-5" />
                          <span className="sr-only">Open File Browser</span>
                        </Button>
                      </SheetTrigger>
-                     {/* Ensure SheetContent has appropriate styling */}
                      <SheetContent side="bottom" className="w-full h-2/3 p-0 flex flex-col" >
-                       {/* Add accessible title */}
-                        <SheetHeader className="p-3 border-b border-border flex-shrink-0"> {/* Added header */}
+                        <SheetHeader className="p-3 border-b border-border flex-shrink-0">
                            <SheetTitle>File Browser</SheetTitle>
                          </SheetHeader>
                        <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
                      </SheetContent>
                    </Sheet>
                 ) : null}
-                {/* Current File Indicator (Desktop & Mobile) */}
-                 <div className="flex items-center gap-1 text-muted-foreground overflow-hidden"> {/* Added overflow-hidden */}
+                 <div className="flex items-center gap-1 text-muted-foreground overflow-hidden">
+                     {getCurrentFileIcon()}
                      {isLoadingFile ? (
-                        <>
-                            <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
-                            <span className="truncate">Loading...</span>
-                        </>
+                        <span className="truncate">Loading...</span>
                     ) : selectedFile ? (
-                        <>
-                            <FileIcon className="h-4 w-4 flex-shrink-0" />
-                            <span className="font-medium text-foreground truncate" title={selectedFile}>{selectedFile}</span>
-                        </>
+                        <span className="font-medium text-foreground truncate" title={selectedFile}>{selectedFile}</span>
                     ) : (
                          <span className="truncate">No file selected</span>
                     )}
@@ -354,21 +444,21 @@ export default function CodePad() {
                   <Tooltip>
                      <TooltipTrigger asChild>
                          <Button
-                            onClick={toggleEditorVisibility}
+                            onClick={toggleEditorPdfVisibility}
                             variant="ghost"
                             size="icon"
                             className={cn(
                                 "h-7 w-7",
                                 isEditorVisible ? "text-primary bg-primary/10" : "text-muted-foreground"
                             )}
-                            disabled={!isChatVisible && isEditorVisible} // Prevent disabling the last visible panel
+                            disabled={!isChatVisible && isEditorVisible}
                          >
                             <PanelLeftOpen className="h-4 w-4" />
-                            <span className="sr-only">Toggle Editor/Output</span>
+                            <span className="sr-only">Toggle Editor/Viewer</span>
                          </Button>
                      </TooltipTrigger>
                      <TooltipContent side="bottom">
-                        <p>{isEditorVisible ? "Hide" : "Show"} Editor & Output</p>
+                        <p>{isEditorVisible ? "Hide" : "Show"} Editor/Viewer & Output</p>
                      </TooltipContent>
                   </Tooltip>
                    <Tooltip>
@@ -381,7 +471,7 @@ export default function CodePad() {
                                 "h-7 w-7",
                                 isChatVisible ? "text-primary bg-primary/10" : "text-muted-foreground"
                             )}
-                             disabled={!isEditorVisible && isChatVisible} // Prevent disabling the last visible panel
+                             disabled={!isEditorVisible && isChatVisible}
                          >
                             <PanelRightOpen className="h-4 w-4" />
                              <span className="sr-only">Toggle Chat Panel</span>
@@ -408,28 +498,28 @@ export default function CodePad() {
                      <DropdownMenuContent align="end">
                        <DropdownMenuItem
                          onClick={handleSaveFile}
-                         disabled={!selectedFile || isSavingFile || isLoadingFile}
+                         disabled={!selectedFile || isSavingFile || isLoadingFile || fileType === 'pdf'} // Disable save for PDF
                        >
                          {isSavingFile ? (
                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                          ) : (
-                           <Save className="mr-2 h-4 w-4 text-primary" /> // Icon color
+                           <Save className="mr-2 h-4 w-4 text-primary" />
                          )}
                          {isSavingFile ? "Saving..." : "Save"}
                        </DropdownMenuItem>
                        <DropdownMenuItem
                          onClick={executeCode}
-                         disabled={isRunning || isLoadingFile || isSavingFile}
+                         disabled={isRunning || isLoadingFile || isSavingFile || fileType !== 'code'} // Disable run for non-code
                        >
                          {isRunning ? (
                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                          ) : (
-                           <Play className="mr-2 h-4 w-4 text-primary" /> // Icon color
+                           <Play className="mr-2 h-4 w-4 text-primary" />
                          )}
                          {isRunning ? "Running..." : "Run"}
                        </DropdownMenuItem>
-                       <DropdownMenuItem onClick={clearOutput}>
-                         <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" /> // Icon color
+                       <DropdownMenuItem onClick={clearOutput} disabled={fileType !== 'code'}> {/* Disable clear for non-code */}
+                         <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" />
                          Clear Output
                        </DropdownMenuItem>
                      </DropdownMenuContent>
@@ -441,10 +531,10 @@ export default function CodePad() {
                          <TooltipTrigger asChild>
                             <Button
                                onClick={handleSaveFile}
-                               disabled={!selectedFile || isSavingFile || isLoadingFile}
+                               disabled={!selectedFile || isSavingFile || isLoadingFile || fileType === 'pdf'} // Disable save for PDF
                                variant="ghost"
-                               size="icon" // Changed to icon
-                               className="text-primary hover:bg-primary/10 hover:text-primary h-8 w-8" // Use primary color
+                               size="icon"
+                               className="text-primary hover:bg-primary/10 hover:text-primary h-8 w-8"
                             >
                                {isSavingFile ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -455,7 +545,7 @@ export default function CodePad() {
                             </Button>
                          </TooltipTrigger>
                           <TooltipContent side="bottom">
-                             <p>Save File ({selectedFile || 'No file'})</p>
+                             <p>Save File ({selectedFile || 'No file'}) {fileType === 'pdf' ? '(Disabled for PDF)' : ''}</p>
                           </TooltipContent>
                       </Tooltip>
 
@@ -463,10 +553,10 @@ export default function CodePad() {
                          <TooltipTrigger asChild>
                             <Button
                                onClick={executeCode}
-                               disabled={isRunning || isLoadingFile || isSavingFile}
+                               disabled={isRunning || isLoadingFile || isSavingFile || fileType !== 'code'} // Disable run for non-code
                                variant="ghost"
-                               size="icon" // Changed to icon
-                                className="text-primary hover:bg-primary/10 hover:text-primary h-8 w-8" // Use primary color
+                               size="icon"
+                                className="text-primary hover:bg-primary/10 hover:text-primary h-8 w-8"
                             >
                                {isRunning ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -477,22 +567,21 @@ export default function CodePad() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
-                            <p>Run Code</p>
+                            <p>Run Code {fileType !== 'code' ? '(Code files only)' : ''}</p>
                           </TooltipContent>
                        </Tooltip>
 
                        <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button onClick={clearOutput} variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted/10 hover:text-muted-foreground h-8 w-8">
+                              <Button onClick={clearOutput} variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted/10 hover:text-muted-foreground h-8 w-8" disabled={fileType !== 'code'}> {/* Disable clear for non-code */}
                                <Trash2 className="h-4 w-4" />
                                <span className="sr-only">Clear Output</span>
                              </Button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
-                             <p>Clear Output</p>
+                             <p>Clear Output {fileType !== 'code' ? '(Code files only)' : ''}</p>
                           </TooltipContent>
                        </Tooltip>
-                       {/* Removed chat toggle button from here, moved to center */}
                    </>
                 )}
             </div>
