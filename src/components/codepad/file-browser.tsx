@@ -8,8 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 import { Folder, File as FileIcon, AlertCircle, RefreshCw, X } from "lucide-react"; // Add icons, Add X
 import { listFiles } from "@/services/file-api"; // Import API function
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
-import { SheetClose } from "@/components/ui/sheet"; // Import SheetClose
+// Removed: import { useIsMobile } from "@/hooks/use-mobile";
+// Removed: import { SheetClose } from "@/components/ui/sheet";
 
 
 interface FileBrowserProps {
@@ -21,7 +21,7 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
   const [files, setFiles] = React.useState<string[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const isMobile = useIsMobile(); // Check if mobile
+  // Removed: const isMobile = useIsMobile(); // Check if mobile
 
   const fetchFileList = React.useCallback(async () => {
     setIsLoading(true);
@@ -46,8 +46,8 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
     fetchFileList();
   };
 
-  // Wrap file button with SheetClose on mobile
-  const FileButtonWrapper = isMobile ? SheetClose : React.Fragment;
+  // Removed the conditional SheetClose wrapper logic
+  // const FileButtonWrapper = isMobile ? SheetClose : React.Fragment;
 
 
   return (
@@ -91,23 +91,23 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
         ): (
           <div className="space-y-1">
             {files.map((file) => (
-               <FileButtonWrapper key={file} {...(isMobile ? { asChild: true } : {})}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "w-full justify-start text-left h-8 px-2 text-secondary-foreground", // Ensure default text color
-                      selectedFile === file
-                        ? "bg-accent text-accent-foreground" // Selected uses accent
-                        : "hover:bg-muted hover:text-muted-foreground" // Hover uses muted
-                    )}
-                    onClick={() => onSelectFile(file)}
-                    title={file}
-                  >
-                    <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span className="truncate flex-grow">{file}</span>
-                  </Button>
-               </FileButtonWrapper>
+                // Render Button directly, Sheet closing is handled in CodePad's onSelectFile
+                <Button
+                  key={file}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-left h-8 px-2 text-secondary-foreground", // Ensure default text color
+                    selectedFile === file
+                      ? "bg-accent text-accent-foreground" // Selected uses accent
+                      : "hover:bg-muted hover:text-muted-foreground" // Hover uses muted
+                  )}
+                  onClick={() => onSelectFile(file)}
+                  title={file}
+                >
+                  <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate flex-grow">{file}</span>
+                </Button>
             ))}
           </div>
         )}
