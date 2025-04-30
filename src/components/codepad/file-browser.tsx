@@ -51,8 +51,10 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
 
 
   return (
-    <div className="flex flex-col h-full bg-card text-card-foreground border-t border-border md:border-r md:border-t-0"> {/* Added top border for bottom sheet */}
-      <div className="p-3 border-b border-border flex items-center justify-between">
+     // Use bg-secondary for the file browser panel background
+    <div className="flex flex-col h-full bg-secondary text-secondary-foreground border-t border-border md:border-r md:border-t-0">
+       {/* Header remains card background for visual separation */}
+      <div className="p-3 border-b border-border flex items-center justify-between bg-card text-card-foreground">
         <div className="flex items-center gap-2">
            <Folder className="h-5 w-5 text-primary" />
            <h2 className="text-lg font-semibold">Files</h2>
@@ -62,23 +64,16 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                <span className="sr-only">Refresh Files</span>
              </Button>
-              {/* Show close button only on mobile inside the sheet (relies on SheetContent's default close button) */}
-             {/* {isMobile && ( // Removed explicit close button here as SheetContent provides one
-               <SheetClose asChild>
-                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                   <X className="h-4 w-4" />
-                   <span className="sr-only">Close File Browser</span>
-                 </Button>
-               </SheetClose>
-             )} */}
+              {/* Mobile close button handled by SheetContent */}
          </div>
       </div>
-      <ScrollArea className="flex-grow p-2 output-panel"> {/* Reuse output-panel scrollbar style */}
+      {/* ScrollArea uses output-panel style, padding adjusted */}
+      <ScrollArea className="flex-grow p-2 output-panel">
         {isLoading ? (
           <div className="space-y-2 p-2">
             {/* Show skeletons while loading */}
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full rounded-md" />
+              <Skeleton key={i} className="h-8 w-full rounded-md bg-muted" /> // Skeleton uses muted bg
             ))}
           </div>
         ) : error ? (
@@ -101,8 +96,10 @@ export default function FileBrowser({ onSelectFile, selectedFile }: FileBrowserP
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "w-full justify-start text-left h-8 px-2",
-                      selectedFile === file ? "bg-accent text-accent-foreground" : "hover:bg-muted/50"
+                      "w-full justify-start text-left h-8 px-2 text-secondary-foreground", // Ensure default text color
+                      selectedFile === file
+                        ? "bg-accent text-accent-foreground" // Selected uses accent
+                        : "hover:bg-muted hover:text-muted-foreground" // Hover uses muted
                     )}
                     onClick={() => onSelectFile(file)}
                     title={file}

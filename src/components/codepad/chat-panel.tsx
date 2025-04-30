@@ -49,23 +49,17 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
 
 
   return (
-    <div className="flex flex-col h-full bg-card text-card-foreground border-t border-border md:border-l md:border-t-0"> {/* Added top border for bottom sheet */}
+    // Use bg-secondary for the chat panel background for slight distinction
+    <div className="flex flex-col h-full bg-secondary text-secondary-foreground border-t border-border md:border-l md:border-t-0"> {/* Added top border for bottom sheet */}
        {/* Header */}
-       <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+       <div className="p-4 border-b border-border flex items-center justify-between gap-2 bg-card text-card-foreground"> {/* Header remains card background */}
           <div className="flex items-center gap-2">
              <Sparkles className="h-5 w-5 text-primary" />
              <h2 className="text-lg font-semibold">AI Assistant</h2>
           </div>
            {/* Mobile close button is handled by SheetContent by default */}
-           {/* {isMobile && (
-               <SheetClose asChild>
-                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                   <X className="h-4 w-4" />
-                   <span className="sr-only">Close Chat</span>
-                 </Button>
-               </SheetClose>
-            )} */}
        </div>
+      {/* ScrollArea uses output-panel style for scrollbar, content padding added here */}
       <ScrollArea className="flex-grow p-4 output-panel" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((msg, index) => (
@@ -78,17 +72,17 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
             >
               {msg.role === "model" && (
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                  <AvatarFallback className="bg-muted text-muted-foreground"> {/* Adjusted AI avatar background */}
                     <Bot size={18} />
                   </AvatarFallback>
                 </Avatar>
               )}
               <div
                 className={cn(
-                  "max-w-[75%] rounded-lg px-3 py-2 text-sm break-words",
+                  "max-w-[75%] rounded-lg px-3 py-2 text-sm break-words shadow-sm", // Added subtle shadow
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    ? "bg-primary text-primary-foreground" // User messages use primary color
+                    : "bg-card text-card-foreground border border-border" // AI messages use card background with border
                 )}
               >
                 {/* Simple rendering of content, consider markdown later */}
@@ -96,7 +90,8 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
               </div>
                {msg.role === "user" && (
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-secondary text-secondary-foreground">
+                  {/* User avatar with secondary background */}
+                  <AvatarFallback className="bg-secondary-foreground text-secondary">
                     <User size={18} />
                   </AvatarFallback>
                 </Avatar>
@@ -106,19 +101,21 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
            {isLoading && (
             <div className="flex items-start gap-3 justify-start">
                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                   <AvatarFallback className="bg-muted text-muted-foreground">
                     <Bot size={18} />
                   </AvatarFallback>
                 </Avatar>
-              <div className="bg-muted rounded-lg px-3 py-2 text-sm flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
+               {/* Loading indicator uses card background */}
+              <div className="bg-card text-card-foreground border border-border rounded-lg px-3 py-2 text-sm flex items-center space-x-2 shadow-sm">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" /> {/* Spinner uses primary color */}
                 <span>Thinking...</span>
               </div>
             </div>
           )}
         </div>
       </ScrollArea>
-      <div className="p-4 border-t border-border">
+       {/* Input area uses card background */}
+      <div className="p-4 border-t border-border bg-card">
         <div className="flex items-center gap-2">
           <Input
             placeholder="Ask the AI anything..."
@@ -126,7 +123,7 @@ export default function ChatPanel({ messages, onSendMessage, isLoading }: ChatPa
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             disabled={isLoading}
-            className="flex-grow"
+            className="flex-grow bg-background focus:bg-background" // Ensure input field background is consistent
           />
           <Button onClick={handleSend} disabled={isLoading || !inputMessage.trim()} size="icon">
              <Send className="h-4 w-4" />

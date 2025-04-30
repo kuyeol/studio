@@ -176,20 +176,20 @@ export default function CodePad() {
   };
 
   const renderDesktopLayout = () => (
-     <ResizablePanelGroup direction="horizontal" className="flex-grow rounded-lg">
+     <ResizablePanelGroup direction="horizontal" className="flex-grow rounded-lg border border-border">
         {/* Left Side: File Browser */}
          <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
               <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
          </ResizablePanel>
-         <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
+         <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
 
        {/* Center: Editor and Output */}
        <ResizablePanel defaultSize={isDesktopChatPanelOpen ? 50 : 80}>
           <ResizablePanelGroup direction="vertical" className="flex-grow">
-            <ResizablePanel defaultSize={60} minSize={20}>
+            <ResizablePanel defaultSize={60} minSize={20} className="bg-card rounded-t-lg"> {/* Editor panel gets card background */}
               <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
             </ResizablePanel>
-            <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
+            <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
             <ResizablePanel defaultSize={40} minSize={10}>
               <OutputPanel output={output} />
             </ResizablePanel>
@@ -199,7 +199,7 @@ export default function CodePad() {
        {/* Optional Right Side: Chat Panel */}
        {isDesktopChatPanelOpen && (
          <>
-           <ResizableHandle withHandle className="bg-border hover:bg-accent data-[resize-handle-active]:bg-accent transition-colors duration-200" />
+           <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
            <ResizablePanel defaultSize={30} minSize={15} maxSize={50}>
              <ChatPanel
                messages={messages}
@@ -213,9 +213,9 @@ export default function CodePad() {
   );
 
   const renderMobileLayout = () => (
-    <div className="flex-grow flex flex-col">
+    <div className="flex-grow flex flex-col border border-border rounded-lg overflow-hidden"> {/* Added border and rounded */}
       {/* Editor takes most space */}
-      <div className="flex-grow-[6] min-h-0">
+      <div className="flex-grow-[6] min-h-0 bg-card"> {/* Editor panel gets card background */}
           <CodeEditor code={code} setCode={setCode} disabled={isLoadingFile || isSavingFile} />
       </div>
       {/* Output panel below */}
@@ -226,8 +226,8 @@ export default function CodePad() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
-       <header className="flex items-center justify-between p-2 border-b border-border flex-shrink-0">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden p-2"> {/* Added padding to body */}
+       <header className="flex items-center justify-between p-2 border-b border-border flex-shrink-0 mb-2 bg-card rounded-lg shadow-sm"> {/* Header gets card bg, rounded, shadow */}
          {/* Left Side: Mobile File Trigger / Desktop File Indicator */}
          <div className="flex items-center gap-2 text-sm min-w-0">
             {isMobile ? (
@@ -238,7 +238,8 @@ export default function CodePad() {
                      <span className="sr-only">Open File Browser</span>
                    </Button>
                  </SheetTrigger>
-                 <SheetContent side="bottom" className="w-full h-2/3 p-0"> {/* Changed side, width, height */}
+                 {/* Ensure SheetContent has appropriate styling */}
+                 <SheetContent side="bottom" className="w-full h-2/3 p-0 flex flex-col" >
                    <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
                  </SheetContent>
                </Sheet>
@@ -279,7 +280,7 @@ export default function CodePad() {
                      {isSavingFile ? (
                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                      ) : (
-                       <Save className="mr-2 h-4 w-4" />
+                       <Save className="mr-2 h-4 w-4 text-primary" /> // Icon color
                      )}
                      {isSavingFile ? "Saving..." : "Save"}
                    </DropdownMenuItem>
@@ -290,12 +291,12 @@ export default function CodePad() {
                      {isRunning ? (
                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                      ) : (
-                       <Play className="mr-2 h-4 w-4" />
+                       <Play className="mr-2 h-4 w-4 text-primary" /> // Icon color
                      )}
                      {isRunning ? "Running..." : "Run"}
                    </DropdownMenuItem>
                    <DropdownMenuItem onClick={clearOutput}>
-                     <Trash2 className="mr-2 h-4 w-4" />
+                     <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" /> // Icon color
                      Clear Output
                    </DropdownMenuItem>
                    {/* Trigger for Chat Sheet */}
@@ -313,7 +314,7 @@ export default function CodePad() {
                    disabled={!selectedFile || isSavingFile || isLoadingFile}
                    variant="ghost"
                    size="sm"
-                   className="text-accent hover:bg-accent/10 hover:text-accent"
+                   className="text-primary hover:bg-primary/10 hover:text-primary" // Use primary color
                   >
                    {isSavingFile ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -327,7 +328,7 @@ export default function CodePad() {
                    disabled={isRunning || isLoadingFile || isSavingFile}
                    variant="ghost"
                    size="sm"
-                   className="text-accent hover:bg-accent/10 hover:text-accent"
+                    className="text-primary hover:bg-primary/10 hover:text-primary" // Use primary color
                   >
                     {isRunning ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -336,11 +337,16 @@ export default function CodePad() {
                    )}
                    {isRunning ? "Running..." : "Run"}
                  </Button>
-                 <Button onClick={clearOutput} variant="ghost" size="sm" className="text-muted-foreground hover:bg-muted/10 hover:text-muted-foreground">
+                  <Button onClick={clearOutput} variant="ghost" size="sm" className="text-muted-foreground hover:bg-muted/10 hover:text-muted-foreground">
                    <Trash2 className="mr-2 h-4 w-4" />
                    Clear Output
                  </Button>
-                  <Button onClick={toggleDesktopChatPanel} variant="ghost" size="sm" className={` ${isDesktopChatPanelOpen ? 'text-accent hover:bg-accent/10' : 'text-muted-foreground hover:bg-muted/10'}`}>
+                  <Button onClick={toggleDesktopChatPanel} variant="ghost" size="sm" className={cn(
+                      'hover:bg-muted/10', // Consistent hover
+                      isDesktopChatPanelOpen
+                        ? 'text-primary hover:text-primary bg-primary/10' // Active state with primary color
+                        : 'text-muted-foreground hover:text-muted-foreground' // Inactive state
+                    )}>
                    <MessageSquare className="mr-2 h-4 w-4" />
                    Chat
                  </Button>
@@ -355,7 +361,8 @@ export default function CodePad() {
         {/* Mobile Chat Sheet - Changed side and height */}
         {isMobile && (
             <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
-                 <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col"> {/* Changed side and height */}
+                 {/* Ensure SheetContent has appropriate styling */}
+                 <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col">
                      <ChatPanel
                         messages={messages}
                         onSendMessage={handleSendMessage}

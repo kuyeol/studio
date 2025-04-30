@@ -53,7 +53,8 @@ export default function CodeEditor({ code, setCode, disabled = false }: CodeEdit
     const prismLanguage = languages[language] || languages.clike;
 
   return (
-    <div className={`h-full w-full overflow-auto bg-background code-editor-wrapper rounded-t-lg p-1 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+    // Use bg-card for the editor background to match the light theme panels
+    <div className={`h-full w-full overflow-auto bg-card text-card-foreground code-editor-wrapper rounded-t-lg p-1 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
         <Editor
           value={code}
           onValueChange={(code) => setCode(code)}
@@ -64,8 +65,8 @@ export default function CodeEditor({ code, setCode, disabled = false }: CodeEdit
             fontSize: 14,
             outline: 0, // Remove default outline
             minHeight: '100%',
-            backgroundColor: 'hsl(var(--background))', // Ensure background color consistency
-            color: 'hsl(var(--foreground))', // Ensure text color consistency
+            backgroundColor: 'hsl(var(--card))', // Ensure background color consistency (card)
+            color: 'hsl(var(--foreground))', // Ensure text color consistency (foreground)
              // Prevent interaction when disabled
             pointerEvents: disabled ? 'none' : 'auto',
           }}
