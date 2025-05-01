@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Trash2, Save, Loader2, File as FileIcon, PanelLeft, X, Menu, PanelBottom, Code, PanelRightOpen, PanelLeftOpen, FileText, FileType } from "lucide-react"; // Add FileType icon
 import { chat, type Message, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { useToast } from "@/hooks/use-toast";
-import { readFile, saveFile } from "@/services/file-api"; // Import file API functions
+import { readFile, saveFile, uploadFile } from "@/services/file-api"; // Import file API functions & upload
 import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile hook
 import {
   Sheet,
@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu"; // Import Dropdown components
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip
-// Removed pdfjs import, handling it within PdfViewer component now
+
 
 // Helper to determine file type
 const getFileType = (fileName: string | null): 'code' | 'pdf' | 'markdown' | 'unknown' => {
@@ -43,7 +43,7 @@ const getFileType = (fileName: string | null): 'code' | 'pdf' | 'markdown' | 'un
   if (extension === 'pdf') return 'pdf';
   if (extension === 'md') return 'markdown';
   // Assume code for common script/markup extensions
-  if (['js', 'ts', 'jsx', 'tsx', 'css', 'html', 'xml', 'json', 'java'].includes(extension || '')) return 'code';
+  if (['js', 'ts', 'jsx', 'tsx', 'css', 'html', 'xml', 'json', 'java', 'py'].includes(extension || '')) return 'code'; // Added 'py'
   return 'unknown'; // Or handle other types like images, etc.
 };
 
@@ -67,6 +67,7 @@ export default function CodePad() {
 
   // State for mobile sheets
   const [isFileSheetOpen, setIsFileSheetOpen] = React.useState(false);
+  const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false); // State for mobile chat sheet
 
   // State for panel visibility (Desktop only)
   const [isEditorVisible, setIsEditorVisible] = React.useState(true); // Combined Editor/PDF/Markdown view
@@ -180,7 +181,7 @@ export default function CodePad() {
          });
       }
 
-    } catch (error) {
+    } catch (error: any) { // Added type annotation for error
       console.error("Error loading file:", error);
       setCode(`// Error loading ${fileName}\n// Please check the console for details.`);
       setPdfUrl(null); // Clear PDF URL on error
@@ -189,7 +190,7 @@ export default function CodePad() {
       toast({
         variant: "destructive",
         title: "File Load Error",
-        description: `Could not load ${fileName}. See console for details.`,
+        description: `Could not load ${fileName}. ${error?.message || 'Unknown error'}`, // Include error message
       });
     } finally {
       setIsLoadingFile(false);
@@ -218,6 +219,12 @@ export default function CodePad() {
                 description: "Cannot save file of unknown type.",
                 variant: "destructive",
             });
+        } else if (!selectedFile) {
+             toast({
+                title: "Cannot Save",
+                description: "No file selected to save.",
+                variant: "destructive",
+            });
         }
         return;
     }
@@ -229,12 +236,12 @@ export default function CodePad() {
         title: "File Saved",
         description: `${selectedFile} saved successfully.`,
       });
-    } catch (error) {
+    } catch (error: any) { // Added type annotation for error
       console.error("Error saving file:", error);
        toast({
         variant: "destructive",
         title: "File Save Error",
-        description: `Could not save ${selectedFile}. See console for details.`,
+        description: `Could not save ${selectedFile}. ${error?.message || 'Unknown error'}`, // Include error message
       });
     } finally {
       setIsSavingFile(false);
@@ -258,12 +265,12 @@ export default function CodePad() {
       const result: ChatOutput = await chat(chatInput);
       const aiResponseMessage: Message = { role: "model", content: result.response };
       setMessages((prevMessages = []) => [...prevMessages, aiResponseMessage]);
-    } catch (error) {
+    } catch (error: any) { // Added type annotation for error
       console.error("Error calling chat flow:", error);
       toast({
         variant: "destructive",
         title: "AI Chat Error",
-        description: "Could not get response from AI. Please try again.",
+        description: `Could not get response from AI. ${error?.message || 'Please try again.'}`, // Include error message
       });
       // Optional: remove the user message if the API call failed
        setMessages((prevMessages = []) => prevMessages.slice(0, -1));
@@ -390,45 +397,24 @@ export default function CodePad() {
 
 
   const renderMobileLayout = () => (
-    <ResizablePanelGroup
-      direction="vertical"
-      className="flex-grow rounded-lg border border-border overflow-hidden"
-    >
-      {/* Top Panel: Editor/Viewer + Output (Resizable internally if needed) */}
-      <ResizablePanel defaultSize={50} minSize={20}>
-          <ResizablePanelGroup direction="vertical" className="h-full">
-              {/* Top: Editor, PDF Viewer, or Markdown Viewer */}
-              <ResizablePanel
-                  defaultSize={fileType === 'code' ? 60 : 100} // Full height if no output
-                  minSize={20}
-                  className="bg-card overflow-hidden"
-              >
-                  {renderEditorOrViewer()}
-              </ResizablePanel>
-              {/* Bottom: Output Panel (Only shown for code files) */}
-              {fileType === 'code' && (
-                <>
-                  <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
-                  <ResizablePanel defaultSize={40} minSize={10}>
-                      <OutputPanel output={output} />
-                  </ResizablePanel>
-                </>
-              )}
-          </ResizablePanelGroup>
-      </ResizablePanel>
+     <div className="flex flex-col h-full"> {/* Main container for mobile */}
+        {/* Editor/Viewer Area */}
+        <div className="flex-grow overflow-hidden border border-border rounded-lg mb-2">
+            {renderEditorOrViewer()}
+        </div>
 
-      <ResizableHandle withHandle className="bg-border hover:bg-primary/20 data-[resize-handle-active]:bg-primary/30 transition-colors duration-200" />
+         {/* Output Area (Only if code file type) */}
+        {fileType === 'code' && (
+            <div className="h-[30%] flex-shrink-0 border border-border rounded-lg mb-2 overflow-hidden">
+               <OutputPanel output={output} />
+            </div>
+        )}
 
-       {/* Bottom Panel: Chat */}
-      <ResizablePanel defaultSize={50} minSize={20}>
-          <ChatPanel
-            messages={messages || []}
-            onSendMessage={handleSendMessage}
-            isLoading={isChatLoading}
-          />
-      </ResizablePanel>
-    </ResizablePanelGroup>
+        {/* Mobile Chat Trigger (Remains at bottom) */}
+        {/* Note: The actual chat panel is rendered inside the Sheet */}
+     </div>
   );
+
 
   // Helper to get the correct file icon based on type
   const getCurrentFileIcon = () => {
@@ -464,7 +450,7 @@ export default function CodePad() {
           <header className="flex items-center justify-between p-2 border-b border-border flex-shrink-0 mb-2 bg-card rounded-lg shadow-sm">
             {/* Left Side: Mobile File Trigger / Desktop File Indicator */}
             <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
-                {isMobile ? (
+                {isMobile && ( // Conditionally render File Browser Trigger
                    <Sheet open={isFileSheetOpen} onOpenChange={setIsFileSheetOpen}>
                     <SheetTrigger asChild>
                        <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -480,7 +466,7 @@ export default function CodePad() {
                        <FileBrowser onSelectFile={handleSelectFile} selectedFile={selectedFile} />
                      </SheetContent>
                    </Sheet>
-                ) : null}
+                )}
                  {/* File Indicator (Visible on both, but more prominent on desktop) */}
                  <div className="flex items-center gap-1 text-muted-foreground overflow-hidden">
                      {getCurrentFileIcon()} {/* Dynamic icon based on file type */}
@@ -546,49 +532,70 @@ export default function CodePad() {
             )}
 
 
-            {/* Right Side: Action Buttons (Save, Run, Clear) */}
+            {/* Right Side: Action Buttons (Save, Run, Clear) + Mobile Chat Trigger */}
             <div className="flex items-center gap-1">
                 {isMobile ? (
-                   // Dropdown menu for actions on mobile
-                   <DropdownMenu>
-                     <DropdownMenuTrigger asChild>
-                       <Button variant="ghost" size="icon" className="h-8 w-8">
-                         <Menu className="h-5 w-5" /> {/* Hamburger menu icon */}
-                         <span className="sr-only">More actions</span>
-                       </Button>
-                     </DropdownMenuTrigger>
-                     <DropdownMenuContent align="end">
-                       {/* Save Action */}
-                       <DropdownMenuItem
-                         onClick={handleSaveFile}
-                         disabled={!selectedFile || isSavingFile || isLoadingFile || fileType !== 'code'} // Only enable save for code files
-                       >
-                         {isSavingFile ? (
-                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                         ) : (
-                           <Save className="mr-2 h-4 w-4 text-primary" />
-                         )}
-                         {isSavingFile ? "Saving..." : "Save Code"}
-                       </DropdownMenuItem>
-                       {/* Run Action */}
-                       <DropdownMenuItem
-                         onClick={executeCode}
-                         disabled={isRunning || isLoadingFile || isSavingFile || fileType !== 'code'} // Only enable run for code files
-                       >
-                         {isRunning ? (
-                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                         ) : (
-                           <Play className="mr-2 h-4 w-4 text-primary" />
-                         )}
-                         {isRunning ? "Running..." : "Run Code"}
-                       </DropdownMenuItem>
-                        {/* Clear Output Action */}
-                       <DropdownMenuItem onClick={clearOutput} disabled={fileType !== 'code'}> {/* Only enable clear for code files */}
-                         <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" />
-                         Clear Output
-                       </DropdownMenuItem>
-                     </DropdownMenuContent>
-                   </DropdownMenu>
+                   // Dropdown menu for actions on mobile + Chat Trigger Button
+                   <>
+                       {/* Chat Trigger Button */}
+                        <Sheet open={isChatSheetOpen} onOpenChange={setIsChatSheetOpen}>
+                            <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18.1H3"/></svg> {/* Simple chat bubble icon */}
+                                <span className="sr-only">Open Chat</span>
+                            </Button>
+                            </SheetTrigger>
+                            <SheetContent side="bottom" className="w-full h-4/5 p-0 flex flex-col"> {/* Taller sheet */}
+                               {/* Chat Panel inside the sheet */}
+                               <ChatPanel
+                                messages={messages || []}
+                                onSendMessage={handleSendMessage}
+                                isLoading={isChatLoading}
+                               />
+                            </SheetContent>
+                        </Sheet>
+
+                       {/* Actions Dropdown */}
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" size="icon" className="h-8 w-8">
+                             <Menu className="h-5 w-5" /> {/* Hamburger menu icon */}
+                             <span className="sr-only">More actions</span>
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end">
+                           {/* Save Action */}
+                           <DropdownMenuItem
+                             onClick={handleSaveFile}
+                             disabled={!selectedFile || isSavingFile || isLoadingFile || fileType !== 'code'} // Only enable save for code files
+                           >
+                             {isSavingFile ? (
+                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                             ) : (
+                               <Save className="mr-2 h-4 w-4 text-primary" />
+                             )}
+                             {isSavingFile ? "Saving..." : "Save Code"}
+                           </DropdownMenuItem>
+                           {/* Run Action */}
+                           <DropdownMenuItem
+                             onClick={executeCode}
+                             disabled={isRunning || isLoadingFile || isSavingFile || fileType !== 'code'} // Only enable run for code files
+                           >
+                             {isRunning ? (
+                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                             ) : (
+                               <Play className="mr-2 h-4 w-4 text-primary" />
+                             )}
+                             {isRunning ? "Running..." : "Run Code"}
+                           </DropdownMenuItem>
+                            {/* Clear Output Action */}
+                           <DropdownMenuItem onClick={clearOutput} disabled={fileType !== 'code'}> {/* Only enable clear for code files */}
+                             <Trash2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                             Clear Output
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
+                   </>
 
                 ) : (
                    // Individual buttons with tooltips for actions on desktop
@@ -663,5 +670,3 @@ export default function CodePad() {
     </TooltipProvider>
   );
 }
-
-    
