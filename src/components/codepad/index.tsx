@@ -1,5 +1,5 @@
 
-"use client";
+'use client'
 
 import * as React from "react";
 import {
@@ -14,7 +14,7 @@ import FileBrowser from "./file-browser"; // Import FileBrowser
 import PdfViewer from "./pdf-viewer"; // Import PdfViewer
 import MarkdownViewer from "./markdown-viewer"; // Import MarkdownViewer
 import { Button } from "@/components/ui/button";
-import { Play, Trash2, Save, Loader2, File as FileIcon, PanelLeft, X, Menu, PanelBottom, Code, PanelRightOpen, PanelLeftOpen, FileText, FileType } from "lucide-react"; // Add FileType icon
+import { Play, Trash2, Save,  File as FileIcon, Loader2, X, Menu, PanelBottom, Code, PanelRightOpen, PanelLeftOpen, FileText, FileType } from "lucide-react"; // Add FileType icon
 import { chat, type Message, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { useToast } from "@/hooks/use-toast";
 import { readFile, saveFile, uploadFile } from "@/services/file-api"; // Import file API functions & upload
@@ -34,6 +34,9 @@ import {
 } from "@/components/ui/dropdown-menu"; // Import Dropdown components
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip
+
+import dynamic from 'next/dynamic';
+
 
 
 // Helper to determine file type
@@ -74,12 +77,16 @@ export default function CodePad() {
   const [isChatVisible, setIsChatVisible] = React.useState(true);
 
   // State to track client-side mount to prevent hydration errors
+
   const [hasMounted, setHasMounted] = React.useState(false);
 
   React.useEffect(() => {
+
     setHasMounted(true);
+  
   }, []);
 
+ 
 
   // Dummy execution function - update relevance for non-code files
   const executeCode = async () => {
@@ -436,9 +443,27 @@ export default function CodePad() {
    if (!hasMounted) {
     // Optionally return a loading skeleton or null during server render / initial mount
     return (
-        <div className="flex h-screen items-center justify-center bg-background">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+      <svg
+      className="h-8 w-8 animate-spin text-primary"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+      />
+    </svg>
     );
    }
 
@@ -482,6 +507,7 @@ export default function CodePad() {
             </div>
 
             {/* Center: Desktop Visibility Controls */}
+          
             {!isMobile && (
                <div className="flex items-center gap-1 border border-border rounded-md p-0.5 mx-4">
                   {/* Toggle Editor/Viewer Panel Button */}
