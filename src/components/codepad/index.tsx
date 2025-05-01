@@ -34,14 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu"; // Import Dropdown components
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip
-import { pdfjs } from 'react-pdf';
-
-// Configure pdfjs worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
-
+// Removed pdfjs import, handling it within PdfViewer component now
 
 // Helper to determine file type
 const getFileType = (fileName: string | null): 'code' | 'pdf' | 'markdown' | 'unknown' => {
@@ -78,6 +71,14 @@ export default function CodePad() {
   // State for panel visibility (Desktop only)
   const [isEditorVisible, setIsEditorVisible] = React.useState(true); // Combined Editor/PDF/Markdown view
   const [isChatVisible, setIsChatVisible] = React.useState(true);
+
+  // State to track client-side mount to prevent hydration errors
+  const [hasMounted, setHasMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
 
   // Dummy execution function - update relevance for non-code files
   const executeCode = async () => {
@@ -336,7 +337,7 @@ export default function CodePad() {
              {/* Center: Editor/Viewer + Output OR Empty State */}
              {isEditorVisible && (
                  <ResizablePanel defaultSize={editorPanelSize} minSize={20}>
-                      <ResizablePanelGroup direction="vertical" className="flex-grow">
+                      <ResizablePanelGroup direction="vertical" className="flex-grow h-full"> {/* Ensure full height */}
                           {/* Top: Editor, PDF Viewer, or Markdown Viewer */}
                           <ResizablePanel
                               defaultSize={fileType === 'code' ? 60 : 100} // Give more space if output panel isn't shown
@@ -444,6 +445,16 @@ export default function CodePad() {
              return <FileIcon className="h-4 w-4 flex-shrink-0" />;
       }
   };
+
+  // Prevent rendering until mounted on the client to avoid hydration mismatch
+   if (!hasMounted) {
+    // Optionally return a loading skeleton or null during server render / initial mount
+    return (
+        <div className="flex h-screen items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+   }
 
 
   return (
@@ -652,3 +663,5 @@ export default function CodePad() {
     </TooltipProvider>
   );
 }
+
+    
